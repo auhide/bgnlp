@@ -1,7 +1,7 @@
 import os
 
-import pandas as pd
 import torch
+import pandas as pd
 
 from bg_nlp.tools.vocabs import get_vocab
 from bg_nlp.tools.configs import BgLemmatizerConfig

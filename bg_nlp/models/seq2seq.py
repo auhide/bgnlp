@@ -7,7 +7,6 @@ from torchtext.vocab import Vocab
 from torch.utils.data import DataLoader, Dataset
 
 
-
 logging.basicConfig(
     format="%(asctime)s|%(levelname)s| %(message)s", 
     level=logging.INFO
