@@ -3,6 +3,7 @@ import random
 
 import torch
 from torch import nn
+import torch.nn.functional as F
 from torchtext.vocab import Vocab
 from torch.utils.data import DataLoader, Dataset
 
@@ -11,7 +12,12 @@ from bg_nlp.tokenizers import Tokenizer
 
 class Seq2Seq(nn.Module):
     
-    def __init__(self, encoder: torch.nn.Module, decoder: torch.nn.Module, reverse_input=True):
+    def __init__(
+        self, 
+        encoder: torch.nn.Module, 
+        decoder: torch.nn.Module, 
+        reverse_input=True
+    ):
         super().__init__()
         
         self.encoder = encoder
@@ -31,13 +37,13 @@ class Seq2Seq(nn.Module):
         if self.reverse_input:
             x = torch.flip(x, [1])
         
-        _, hidden = self.encoder(x)
+        enc_out, hidden = self.encoder(x)
 
         # The start token:
         curr_input = y[:, 0]
 
         for t in range(1, tgt_len):
-            out, hidden = self.decoder(curr_input, hidden)
+            out, hidden = self.decoder(curr_input, hidden, enc_out)
             outputs[:, t, :] = out
 
             teacher_force = teacher_forcing_ration > random.random()
@@ -59,32 +65,84 @@ class Encoder(nn.Module):
         vocab_size: int, 
         embed_size: int, 
         hidden_size: int, 
-        num_layers: int, 
-        padding_idx: int,
-        bidirectional=True,
+        padding_idx: int, 
+        bidirectional=True, 
         dropout=0.1
     ):
         super().__init__()
 
         self.hidden_size = hidden_size
-        self.num_layers = num_layers
+        self.num_layers = 1
         self.bidirectional = bidirectional
 
         self.embed = nn.Embedding(vocab_size, embed_size)
-        self.lstm = nn.LSTM(
+        self.gru = nn.GRU(
             input_size=embed_size, 
             hidden_size=hidden_size,
-            num_layers=num_layers,
+            num_layers=self.num_layers,
             batch_first=True,
             bidirectional=bidirectional
         )
         self.dropout = nn.Dropout(dropout)
 
+        directions = 2 if self.bidirectional else 1
+        
+        # A fully-connected layer used for the generation of a single hidden state.
+        # It's used since we have twice as many hidden states (we are using a BiLSTM).
+        self.fc = nn.Linear(directions * hidden_size, hidden_size)
+
     def forward(self, x: torch.Tensor):
         embedded_x = self.dropout(self.embed(x))
-        out, hidden = self.lstm(embedded_x)
+        out, hidden = self.gru(embedded_x)
+        # out.shape: (BATCH_SIZE, SEQ_LEN, HID_SIZE)
+
+        # Concatenating the hidden states in both directions along the 2nd dimension.
+        hidden = torch.tanh(
+            self.fc(
+                torch.cat(
+                    (hidden[-2, :, :], hidden[-1, :, :]), 
+                    dim=1
+                )
+            )
+        )
+        # hidden.shape: (BATCH_SIZE, HIDDEN_DIM)
 
         return out, hidden
+
+
+class Attention(nn.Module):
+    
+    def __init__(self, encoder_hidden_dim: int, decoder_hidden_dim: int):
+        super().__init__()
+        
+        self.attn = nn.Linear((encoder_hidden_dim * 2) + decoder_hidden_dim, decoder_hidden_dim)
+        self.v = nn.Linear(decoder_hidden_dim, 1, bias=False)
+        
+    def forward(self, hidden, encoder_outputs):
+        # hidden.shape: (BATCH_SIZE, DEC_HID_DIM)
+        # encoder_outputs.shape: (BATCH_SIZE, SEQ_LEN, ENC_HID_DIM * 2)
+        seq_len = encoder_outputs.shape[1]
+
+        # Repeating the previous decoder hidden state 'seq_len' times, since
+        # the decoder's hidden state doesn't have a SEQ_LEN dimension.
+        hidden = hidden.unsqueeze(1).repeat(1, seq_len, 1)
+        # After the change hidden.shape will be (BATCH_SIZE, SEQ_LEN, DEC_HID_DIM)
+
+        # Calculating the energy between the prev. decoder hidden state and 
+        # the hidden state of the encoder.
+        energy = torch.sigmoid(
+            self.attn(
+                torch.concat((hidden, encoder_outputs), dim=-1)
+            )
+        )
+
+        # Projecting the energy of all sequences in the batch to a single sequence
+        # of shape (SEQ_LEN, 1).
+        a = self.v(energy).squeeze(-1)
+        # Hence, our attention tensor 'a' should be of shape (BATCH_SIZE, SEQ_LEN).
+
+        # Softmaxing along the SEQ_LEN dimension.
+        return torch.softmax(a, dim=1)
 
 
 class Decoder(nn.Module):
@@ -94,63 +152,77 @@ class Decoder(nn.Module):
         vocab_size: int, 
         embed_size: int, 
         hidden_size: int, 
-        num_layers: int, 
-        padding_idx: int,
-        bidirectional=True,
+        padding_idx: int, 
+        attention: nn.Module,
         dropout=0.1
     ):
         super().__init__()
         self.vocab_size = vocab_size
+        self.attention = attention
+        self.num_layers = 1
 
         self.embed = nn.Embedding(vocab_size, embed_size)
-        self.lstm = nn.LSTM(
-            input_size=embed_size, 
+        self.gru = nn.GRU(
+            input_size=(2 * hidden_size) + embed_size, 
             hidden_size=hidden_size,
-            num_layers=num_layers,
-            batch_first=True,
-            bidirectional=bidirectional
+            num_layers=self.num_layers,
+            batch_first=True
         )
         self.dropout = nn.Dropout(dropout)
 
-        directions = 2 if bidirectional else 1
-        self.project = nn.Linear(directions * hidden_size, vocab_size)
+        self.project_out = nn.Linear(2 * hidden_size + hidden_size + embed_size, vocab_size)
 
-    def forward(self, x: torch.Tensor, hidden: tuple):
+    def forward(self, x: torch.Tensor, hidden: torch.Tensor, enc_out: torch.Tensor):
+        # x.shape: (BATCH_SIZE, SEQ_LEN)
+        # hidden.shape: (BATCH_SIZE, EMB_SIZE)
+        # enc_out.shape: (BATCH_SIZE, DEC_EMB_SIZE * 2)
+
         x = x.unsqueeze(1)
 
         embedded_x = self.dropout(self.embed(x))
-        hidden = [state.detach() for state in hidden]
-        out, hidden = self.lstm(embedded_x, hidden)
-        out = self.project(out)
-
-        return out.squeeze(1), hidden
-
-
-class Attention(nn.Module):
-    
-    def __init__(
-        self, 
-        vocab_size: int, 
-        embed_size: int, 
-        hidden_size: int, 
-        padding_idx: int, 
-        max_len, 
-        dropout=0.1
-    ):
-        super().__init__()
+        # embedded_x.shape: (BATCH_SIZE, SEQ_LEN, EMB_SIZE)
+        a = self.attention(hidden, enc_out)
+        # Adding a 2nd dimension, since torch.bmm expects the two tensors to be
+        # 3D.
+        a = a.unsqueeze(1)
+        # a.shape: (BATCH_SIZE, 1, SEQ_LEN)
         
-        self.embed = nn.Embedding(vocab_size, embed_size)
-        self.dropout = nn.Dropout(dropout)
+        # The weighted sum of the encoder hidden states, using the attention
+        # tensor.
+        weighted = a @ enc_out
+        # weighted.shape: (BATCH_SIZE, 1, (2 * ENC_HID_SIZE))
+
+        gru_input = torch.cat((embedded_x, weighted), dim=-1)
+        # gru_input.shape: (BATCH_SIZE, 1, (2 * ENC_HID_SIZE) + DEC_EMB_SIZE)
+
+        # Since gru_input is batched (is 3D), hidden should also be batched, 
+        # hence, we add an empty SEQ_LEN dimension.
+        out, hidden = self.gru(gru_input, hidden.unsqueeze(0))
+        # out.shape: (BATCH_SIZE, 1, DEC_HID_SIZE)
+        # hidden.shape: (1, BATCH_SIZE, DEC_HID_SIZE)
         
-        self.attn = nn.Linear(embed_size * 2, max_len)
-        
-    def forward(self, x, hidden, encoder_outputs):
-        pass
+        # Removing the SEQ_LEN dimension
+        embedded_x = embedded_x.squeeze(1)
+        out = out.squeeze(1)
+        weighted = weighted.squeeze(1)
+
+        pred = self.project_out(torch.cat((out, weighted, embedded_x), dim=-1))
+        # pred.shape: (BATCH_SIZE, VOCAB_SIZE)
+
+        return pred, hidden.squeeze(0)
 
 
 class Seq2SeqSession:
 
-    def __init__(self, model, loss, optimizer, vocab, device="cpu", clip=5):
+    def __init__(
+        self, 
+        model: torch.nn.Module, 
+        loss: torch.nn.Module, 
+        optimizer: torch.optim.Optimizer, 
+        vocab: Vocab, 
+        device="cpu", 
+        clip=5
+    ):
         self.model = model
         self.loss_func = loss
         self.optimizer = optimizer
@@ -229,7 +301,7 @@ class Seq2SeqSession:
             loss = self.loss_func(y_pred, y)
             loss.backward()
 
-            # Clipping the gradients, since LSTMs have Exploding Gradient problems.
+            # Clipping the gradients, since LSTMs/GRUs have Exploding Gradient problems.
             nn.utils.clip_grad_norm_(self.model.parameters(), self.clip)
             self.optimizer.step()
 
