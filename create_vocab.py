@@ -4,8 +4,8 @@ import pandas as pd
 import torch
 from torchtext.vocab import build_vocab_from_iterator
 
-from bg_nlp.tokenizers import DefaultTokenizer
-from bg_nlp.preprocessing import iterate_corpus
+from bg_nlp.tools.tokenizers import DefaultTokenizer
+from bg_nlp.lib.preprocessing import iterate_corpus
 
 
 SPECIAL_TOKENS = ["[START]", "[END]", "[PAD]", "[UNK]"]

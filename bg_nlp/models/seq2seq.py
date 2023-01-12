@@ -1,13 +1,17 @@
-import re
+import logging
 import random
 
 import torch
 from torch import nn
-import torch.nn.functional as F
 from torchtext.vocab import Vocab
 from torch.utils.data import DataLoader, Dataset
 
-from bg_nlp.tokenizers import Tokenizer
+
+
+logging.basicConfig(
+    format="%(asctime)s|%(levelname)s| %(message)s", 
+    level=logging.INFO
+)
 
 
 class Seq2Seq(nn.Module):
@@ -263,7 +267,9 @@ class Seq2SeqSession:
             train_loss = self._train_epoch(train_dataloader)
             valid_loss = self._valid_epoch(valid_dataloader)
 
-            print(f"Epoch: {epoch + 1}, Training Loss: {train_loss:.2f}, Validation Loss: {valid_loss:.2f}")
+            logging.info(f"Epoch: {epoch + 1}, Training Loss: {train_loss:.2f}, Validation Loss: {valid_loss:.2f}")
+
+        return self.model
 
     def predict(self, word: torch.LongTensor):
         if len(word.shape) == 1:
@@ -338,9 +344,9 @@ class Seq2SeqSession:
                 fixed_input = '\n'.join(fixed_inputs)
                 fixed_pred = '\n'.join(fixed_preds)
 
-                print(f"Input:\n{fixed_input}")
-                print(f"Prediction:\n{fixed_pred}")
-                print()
+                logging.info(f"Input:\n{fixed_input}")
+                logging.info(f"Prediction:\n{fixed_pred}")
+                logging.info("")
 
         self.model.train()
 
