@@ -1,6 +1,6 @@
 import re
 
-from bg_nlp.lib.utils import make_actions_pipeline
+from bgnlp.lib.utils import make_actions_pipeline
 
 
 # TODO: Implement basic functionality for inheritance.

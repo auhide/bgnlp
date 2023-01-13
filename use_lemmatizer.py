@@ -1,6 +1,6 @@
-from bg_nlp.tools.pos import BgLemmatizer
-from bg_nlp.tools.configs import BgLemmatizerConfig
-from bg_nlp.tools.vocabs import get_vocab
+from bgnlp.tools.pos import BgLemmatizer
+from bgnlp.tools.configs import BgLemmatizerConfig
+from bgnlp.tools.vocabs import get_vocab
 
 
 vocab = get_vocab("symbols-vocab")

@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import Dataset
 from torchtext.vocab import Vocab
 
-from bg_nlp.tools.tokenizers import DefaultTokenizer
+from bgnlp.tools.tokenizers import DefaultTokenizer
 
 
 class LemmatizationDataset(Dataset):

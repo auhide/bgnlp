@@ -18,7 +18,7 @@ class BgLemmatizerConfig(Config):
     batch_size: float = 256
     epochs: int = 4
     model_path: str = os.path.join(
-        ".", "bg_nlp", "serialized", "models", "lemmatizer.pt"
+        ".", "bgnlp", "serialized", "models", "lemmatizer.pt"
     )
 
     # Model parameters:

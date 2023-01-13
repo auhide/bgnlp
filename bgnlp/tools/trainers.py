@@ -6,13 +6,13 @@ from dataclasses import fields
 import torch
 from torchtext.vocab import Vocab
 from torch.utils.data import Dataset
-from bg_nlp.lib.exceptions import WrongConfigFields
+from bgnlp.lib.exceptions import WrongConfigFields
 
-from bg_nlp.tools.tokenizers import Tokenizer
-from bg_nlp.lib.datasets import LemmatizationDataset
-from bg_nlp.lib.preprocessing import train_validation_split
-from bg_nlp.tools.configs import BgLemmatizerConfig, Config
-from bg_nlp.models.seq2seq import Attention, Encoder, Decoder, Seq2Seq, Seq2SeqSession
+from bgnlp.tools.tokenizers import Tokenizer
+from bgnlp.lib.datasets import LemmatizationDataset
+from bgnlp.lib.preprocessing import train_validation_split
+from bgnlp.tools.configs import BgLemmatizerConfig, Config
+from bgnlp.models.seq2seq import Attention, Encoder, Decoder, Seq2Seq, Seq2SeqSession
 
 
 logging.basicConfig(

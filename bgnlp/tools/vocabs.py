@@ -3,11 +3,11 @@ import os
 import torch
 from torchtext.vocab import Vocab
 
-from bg_nlp.lib.exceptions import NonExistantVocab
+from bgnlp.lib.exceptions import NonExistantVocab
 
 
 VOCABS_MAPPING = {
-    "symbols-vocab": os.path.join(".", "bg_nlp", "serialized", "vocabs", "svocab.pt")
+    "symbols-vocab": os.path.join(".", "bgnlp", "serialized", "vocabs", "svocab.pt")
 }
 
 

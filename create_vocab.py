@@ -4,8 +4,8 @@ import pandas as pd
 import torch
 from torchtext.vocab import build_vocab_from_iterator
 
-from bg_nlp.tools.tokenizers import DefaultTokenizer
-from bg_nlp.lib.preprocessing import iterate_corpus
+from bgnlp.tools.tokenizers import DefaultTokenizer
+from bgnlp.lib.preprocessing import iterate_corpus
 
 
 SPECIAL_TOKENS = ["[START]", "[END]", "[PAD]", "[UNK]"]
@@ -34,5 +34,5 @@ vocab = build_vocab_from_iterator(
 vocab.set_default_index(vocab["[UNK]"])
 print(f"Vocabulary size: {len(vocab)}")
 print("Saving the vocabulary...")
-torch.save(vocab, os.path.join(".", "bg_nlp", "vocabs", "symbs_vocab.pt"))
+torch.save(vocab, os.path.join(".", "bgnlp", "vocabs", "symbs_vocab.pt"))
 print("Vocabulary saved!")

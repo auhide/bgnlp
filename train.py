@@ -4,11 +4,11 @@ import torch
 import pandas as pd
 from torchmetrics.classification import Accuracy, F1Score
 
-from bg_nlp.tools.vocabs import get_vocab
-from bg_nlp.tools.configs import BgLemmatizerConfig
-from bg_nlp.tools.tokenizers import DefaultTokenizer
-from bg_nlp.lib.datasets import LemmatizationDataset
-from bg_nlp.tools.trainers import BgLemmatizerTrainer
+from bgnlp.tools.vocabs import get_vocab
+from bgnlp.tools.configs import BgLemmatizerConfig
+from bgnlp.tools.tokenizers import DefaultTokenizer
+from bgnlp.lib.datasets import LemmatizationDataset
+from bgnlp.tools.trainers import BgLemmatizerTrainer
 
 
 # Setting a constant pseudo-randomness state.

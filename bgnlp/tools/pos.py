@@ -7,10 +7,10 @@ import torch
 import numpy as np
 from torchtext.vocab import Vocab
 
-from bg_nlp.tools.configs import Config
-from bg_nlp.lib.datasets import LemmatizationDataset
-from bg_nlp.tools.tokenizers import DefaultTokenizer
-from bg_nlp.models.seq2seq import Encoder, Attention, Decoder, Seq2Seq
+from bgnlp.tools.configs import Config
+from bgnlp.lib.datasets import LemmatizationDataset
+from bgnlp.tools.tokenizers import DefaultTokenizer
+from bgnlp.models.seq2seq import Encoder, Attention, Decoder, Seq2Seq
 
 
 # Setting a random seed, since we want consistant predictions!
