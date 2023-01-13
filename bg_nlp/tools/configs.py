@@ -29,6 +29,6 @@ class BgLemmatizerConfig(Config):
     enc_dropout: float = 0.5
     dec_dropout: float = 0.5
     # I've chosen these values since the maximum length of a word was 13 and I've
-    # counted the [START] and [END] tokens, hence the max. sizes are 15.
+    # counted int the [START] and [END] tokens as well - hence the max. sizes are 15.
     max_word_size: int = 15
     max_lemma_size: int = 15
