@@ -1,4 +1,5 @@
 import re
+import random
 from typing import List, Union
 from abc import ABC, abstractmethod
 
@@ -13,11 +14,15 @@ from bg_nlp.models.seq2seq import Encoder, Attention, Decoder, Seq2Seq
 
 
 # Setting a random seed, since we want consistant predictions!
+# I've done it for general python functions, numpy and PyTorch, since
+# there were some discrepancies on inference.
 SEED = 42
+random.seed(SEED)
 np.random.seed(42)
 torch.backends.cudnn.benchmark = True
 torch.manual_seed(SEED)
 torch.cuda.manual_seed(SEED)
+torch.use_deterministic_algorithms(True)
 
 
 class NlpTool(ABC):
@@ -39,6 +44,8 @@ class BgLemmatizer:
         self.itos = {self.vocab[token]: token for token in self.vocab.vocab.itos_}
 
     def __call__(self, words: Union[List[str], str]):
+
+        # If words is a string we tokenize the string into words.
         if isinstance(words, str):
             words = self.tokenizer(words, split_type="word")
 
