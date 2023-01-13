@@ -20,7 +20,7 @@ torch.cuda.manual_seed(SEED)
 
 # The path to the dataset. You can download it from this link and test it out
 # yourself!
-DATASET_PATH = os.path.join("..", "datasets", "bg-pos", "bg-pos.csv")
+DATASET_PATH = os.path.join("..", "..", "datasets", "bg-pos", "bg-pos.csv")
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Initializing the model training configuration.

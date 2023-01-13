@@ -1,3 +1,4 @@
+# TODO: Change .pos to .lemma
 from bgnlp.tools.pos import BgLemmatizer
 from bgnlp.tools.configs import BgLemmatizerConfig
 from bgnlp.tools.vocabs import get_vocab
