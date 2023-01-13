@@ -1,1 +1,6 @@
 __pycache__/
+
+# Folders generated when we run 'python setup.py sdist bdist_wheel'
+bgnlp.egg-info/
+build/
+dist/
