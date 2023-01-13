@@ -232,13 +232,12 @@ class Seq2SeqSession:
 
         self.vocab = vocab
         self.device = device
+        self.clip = clip
 
         # Index to token/string.
         self.itos = {self.vocab[token]: token for token in self.vocab.vocab.itos_}
         # String/token to index.
         self.stoi = vocab
-
-        self.clip = clip
 
         self._init_weights(self.model)
 
@@ -246,7 +245,7 @@ class Seq2SeqSession:
         self, 
         train_dataset: Dataset, valid_dataset: Dataset, 
         batch_size: int, epochs: int = 1, fixed_input: torch.LongTensor = None,
-        num_workers: int = 0
+        num_workers: int = 0, metrics: dict = None
     ):
         train_dataloader = DataLoader(
             dataset=train_dataset,
@@ -261,12 +260,16 @@ class Seq2SeqSession:
             shuffle=True
         )
         self.fixed_input = fixed_input
+        self.metrics = metrics
 
         for epoch in range(epochs):
-            train_loss = self._train_epoch(train_dataloader)
-            valid_loss = self._valid_epoch(valid_dataloader)
+            train_loss, train_metrics = self._train_epoch(train_dataloader)
+            valid_loss, valid_metrics = self._valid_epoch(valid_dataloader)
 
             logging.info(f"Epoch: {epoch + 1}, Training Loss: {train_loss:.2f}, Validation Loss: {valid_loss:.2f}")
+            self._log_metrics("Training", metrics=train_metrics)
+            self._log_metrics("Validation", metrics=valid_metrics)
+            logging.info("")
 
         return self.model
 
@@ -310,9 +313,13 @@ class Seq2SeqSession:
             nn.utils.clip_grad_norm_(self.model.parameters(), self.clip)
             self.optimizer.step()
 
-        return loss.item()
+        metrics = None
+        if self.metrics is not None:
+            metrics = self._get_metrics_results(y_pred, y)
 
-    def _valid_epoch(self, dataloader):
+        return loss.item(), metrics
+
+    def _valid_epoch(self, dataloader: DataLoader):
         self.model.eval()
 
         with torch.no_grad():
@@ -343,15 +350,36 @@ class Seq2SeqSession:
                 fixed_input = '\n'.join(fixed_inputs)
                 fixed_pred = '\n'.join(fixed_preds)
 
-                logging.info(f"Input:\n{fixed_input}")
-                logging.info(f"Prediction:\n{fixed_pred}")
-                logging.info("")
+                logging.info(f"Inputs:\n{fixed_input}")
+                logging.info(f"Predictions:\n{fixed_pred}")
+
+        metrics = None
+        if self.metrics is not None:
+            metrics = self._get_metrics_results(y_pred, y)
 
         self.model.train()
 
-        return loss.item()
+        return loss.item(), metrics
 
-    def _init_weights(self, m):
+    def _init_weights(self, m: nn.Module):
         # This initialization comes from the Seq2Seq paper.
         for name, param in m.named_parameters():
             nn.init.uniform_(param.data, -0.08, 0.08)
+
+    def _get_metrics_results(self, y_pred: torch.Tensor, y: torch.Tensor):
+        results = {}
+
+        for metric_name, metric in self.metrics.items():
+            y_pred_argmax = y_pred.argmax(-1)
+            result = metric(y_pred_argmax, y)
+
+            results[metric_name] = float(result)
+
+        return results
+
+    def _log_metrics(self, type_: str, metrics: dict):
+        log_messages = []
+        for metric_name, metric in metrics.items():
+            log_messages.append(f"{type_} {metric_name}: {metric:.2f}")
+
+        logging.info(", ".join(log_messages))

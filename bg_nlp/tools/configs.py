@@ -16,9 +16,9 @@ class BgLemmatizerConfig(Config):
     device: str
     l_rate: float = 1e-3
     batch_size: float = 256
-    epochs: int = 2
+    epochs: int = 4
     model_path: str = os.path.join(
-        ".", "bg_nlp", "serialized", "models", "seq2seq.pt"
+        ".", "bg_nlp", "serialized", "models", "lemmatizer.pt"
     )
 
     # Model parameters:

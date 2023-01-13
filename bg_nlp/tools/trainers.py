@@ -50,7 +50,8 @@ class BgLemmatizerTrainer(Trainer):
         config: Config, 
         log_words: List[str] = None, 
         test_size: float = 0.9,
-        save_model: bool = True
+        save_model: bool = True,
+        metrics: dict = None
     ):
         # Validating whether the configuration has the correct fields.
         # If they are incorrect - an exception is raised.
@@ -113,12 +114,14 @@ class BgLemmatizerTrainer(Trainer):
             seq2seq = trainer.train(
                 train_dataset=train_dataset, valid_dataset=valid_dataset,
                 batch_size=config.batch_size, epochs=config.epochs,
-                fixed_input=fixed_dataset.x.to(config.device)
+                fixed_input=fixed_dataset.x.to(config.device), 
+                metrics=metrics
             )
         else:
             seq2seq = trainer.train(
                 train_dataset=train_dataset, valid_dataset=valid_dataset,
-                batch_size=config.batch_size, epochs=config.epochs
+                batch_size=config.batch_size, epochs=config.epochs, 
+                metrics=metrics
             )
 
         if save_model:
