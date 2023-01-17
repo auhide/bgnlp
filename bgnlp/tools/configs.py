@@ -16,7 +16,7 @@ class BgLemmatizerConfig(Config):
     device: str
     l_rate: float = 1e-3
     batch_size: float = 256
-    epochs: int = 4
+    epochs: int = 7
     model_path: str = os.path.join(
         ".", "bgnlp", "serialized", "models", "lemmatizer.pt"
     )
@@ -26,8 +26,8 @@ class BgLemmatizerConfig(Config):
     dec_embed_size: int = 256
     enc_hidden_size: int = 256
     dec_hidden_size: int = 256
-    enc_dropout: float = 0.5
-    dec_dropout: float = 0.5
+    enc_dropout: float = 0.3
+    dec_dropout: float = 0.3
     # I've chosen these values since the maximum length of a word was 13 and I've
     # counted int the [START] and [END] tokens as well - hence the max. sizes are 15.
     max_word_size: int = 15

@@ -7,7 +7,7 @@ from bgnlp.tools.vocabs import get_vocab
 vocab = get_vocab("symbols-vocab")
 config = BgLemmatizerConfig(device="cpu")
 
-input_words = "Животът не ти дава мира знаеш ли"
+input_words = "Сестрата му беше на високо в планината"
 lemmatizer = BgLemmatizer(config=config, vocab=vocab)
 prediction = lemmatizer(
     words=input_words

@@ -4,3 +4,4 @@ __pycache__/
 bgnlp.egg-info/
 build/
 dist/
+.temp_*

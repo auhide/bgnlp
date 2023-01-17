@@ -1,4 +1,5 @@
 import os
+from dataclasses import dataclass
 
 import torch
 import pandas as pd
@@ -11,6 +12,12 @@ from bgnlp.lib.datasets import LemmatizationDataset
 from bgnlp.tools.trainers import BgLemmatizerTrainer
 
 
+# Creating a custom config and overloading some values.
+@dataclass
+class CustomLemmatizerConfig(BgLemmatizerConfig):
+    epochs: int = 10
+
+
 # Setting a constant pseudo-randomness state.
 SEED = 42
 torch.backends.cudnn.benchmark = True
@@ -20,11 +27,11 @@ torch.cuda.manual_seed(SEED)
 
 # The path to the dataset. You can download it from this link and test it out
 # yourself!
-DATASET_PATH = os.path.join("..", "..", "datasets", "bg-pos", "bg-pos.csv")
+DATASET_PATH = os.path.join("..", "datasets", "bg-pos", "bg-pos.csv")
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Initializing the model training configuration.
-config = BgLemmatizerConfig(device=DEVICE)
+config = CustomLemmatizerConfig(device=DEVICE)
 
 # CSV dataset with these two columns:
 # 'word' - the words
@@ -60,6 +67,13 @@ lemma_trainer.train(
         "патриот", 
         "Търново", 
         "катерачи",
+        "беше",
+        "в",
+        "във",
+        "с",
+        "със",
+        "съм",
+        "кон",
     ],
     metrics={
         "Accuracy": Accuracy(

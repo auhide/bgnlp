@@ -266,7 +266,7 @@ class Seq2SeqSession:
             train_loss, train_metrics = self._train_epoch(train_dataloader)
             valid_loss, valid_metrics = self._valid_epoch(valid_dataloader)
 
-            logging.info(f"Epoch: {epoch + 1}, Training Loss: {train_loss:.2f}, Validation Loss: {valid_loss:.2f}")
+            logging.info(f"Epoch: {epoch + 1}/{epochs}, Training Loss: {train_loss:.2f}, Validation Loss: {valid_loss:.2f}")
             self._log_metrics("Training", metrics=train_metrics)
             self._log_metrics("Validation", metrics=valid_metrics)
             logging.info("")

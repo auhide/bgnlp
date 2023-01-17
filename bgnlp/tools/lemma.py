@@ -38,7 +38,7 @@ class BgLemmatizer:
         self.config = config
         self.vocab = vocab
         self.tokenizer = tokenizer
-        self.model = self._get_model()
+        self.model = self.get_model()
 
         # Index to token/string.
         self.itos = {self.vocab[token]: token for token in self.vocab.vocab.itos_}
@@ -74,7 +74,7 @@ class BgLemmatizer:
 
         return self._parse_prediction(prediction)
 
-    def _get_model(self):
+    def get_model(self):
         enc = Encoder(
             vocab_size=len(self.vocab),
             embed_size=self.config.enc_embed_size,
