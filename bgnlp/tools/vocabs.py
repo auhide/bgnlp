@@ -1,4 +1,5 @@
 import os
+import sys
 
 import torch
 from torchtext.vocab import Vocab
@@ -6,8 +7,11 @@ from torchtext.vocab import Vocab
 from bgnlp.lib.exceptions import NonExistantVocab
 
 
+PACKAGE_DIR = os.path.dirname(sys.modules["bgnlp"].__file__)
+
+
 VOCABS_MAPPING = {
-    "symbols-vocab": os.path.join(".", "bgnlp", "serialized", "vocabs", "svocab.pt")
+    "symbols-vocab": os.path.join(PACKAGE_DIR, "serialized", "vocabs", "svocab.pt")
 }
 
 

@@ -1,5 +1,9 @@
 import os
+import sys
 from dataclasses import dataclass
+
+
+PACKAGE_DIR = os.path.dirname(sys.modules["bgnlp"].__file__)
 
 
 class Config:
@@ -18,7 +22,7 @@ class BgLemmatizerConfig(Config):
     batch_size: float = 256
     epochs: int = 7
     model_path: str = os.path.join(
-        ".", "bgnlp", "serialized", "models", "lemmatizer.pt"
+        PACKAGE_DIR, "serialized", "models", "lemmatizer.pt"
     )
 
     # Model parameters:
