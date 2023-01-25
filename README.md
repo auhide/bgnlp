@@ -1,2 +1,2 @@
-# BNLP
-A package for Natural Language Processing with Bulgarian.
+# BGNLP
+Process Bulgarian text with this package.

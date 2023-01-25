@@ -11,7 +11,7 @@ REQUIREMENTS_PATH = os.path.join(ROOT, "requirements.txt")
 with codecs.open(README_PATH, encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
-VERSION = '0.0.2'
+VERSION = '0.0.4'
 DESCRIPTION = 'Package for Bulgarian Natural Language Processing.'
 
 
@@ -53,5 +53,7 @@ if __name__ == "__main__":
             "Operating System :: Unix",
             "Operating System :: MacOS :: MacOS X",
             "Operating System :: Microsoft :: Windows",
-        ]
+        ],
+        # This is used because we need the resource files of the package (mainly models).
+        include_package_data=True
     )

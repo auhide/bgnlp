@@ -25,13 +25,6 @@ torch.cuda.manual_seed(SEED)
 torch.use_deterministic_algorithms(True)
 
 
-class NlpTool(ABC):
-
-    @abstractmethod
-    def get_model(self):
-        pass
-
-
 class BgLemmatizer:
     
     def __init__(self, config: Config, vocab: Vocab, tokenizer=DefaultTokenizer()):
@@ -48,6 +41,8 @@ class BgLemmatizer:
         # If words is a string we tokenize the string into words.
         if isinstance(words, str):
             words = self.tokenizer(words, split_type="word")
+
+        self._save_missing_tokens(tokens=words)
 
         # Create a dataset out of 'words'.
         dataset = LemmatizationDataset(
@@ -72,7 +67,10 @@ class BgLemmatizer:
         # Getting the symbols with the highest probabilites for each sequence.
         prediction = prediction.argmax(-1).tolist()
 
-        return self._parse_prediction(prediction)
+        prediction = self._parse_prediction(prediction)
+        self._insert_missing_tokens(processed_tokens=prediction)
+
+        return prediction
 
     def get_model(self):
         enc = Encoder(
@@ -125,3 +123,17 @@ class BgLemmatizer:
             parsed_prediction.append(seq_string)
 
         return parsed_prediction
+
+    def _save_missing_tokens(self, tokens):
+        self._missing_tokens = {}
+
+        for i, token in enumerate(tokens):
+            for symb in token:
+                if not symb in self.itos.values():
+                    self._missing_tokens[i] = token
+                    break
+
+    def _insert_missing_tokens(self, processed_tokens):
+        # Replacing the tokens that can't actually be lemmatized.
+        for i, missing_token in self._missing_tokens.items():
+            processed_tokens[i] = missing_token
