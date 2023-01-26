@@ -1,6 +1,6 @@
 import re
 
-from bgnlp.lib.utils import make_actions_pipeline
+from bgnlp.lib.utils import create_actions_pipeline
 
 
 # TODO: Implement basic functionality for inheritance.
@@ -12,7 +12,7 @@ class DefaultTokenizer(Tokenizer):
     # These actions are going to be executed sequentially, based on the order 
     # in which they are implemented in the class.
     actions_list = []
-    action = make_actions_pipeline(actions_list)
+    action = create_actions_pipeline(actions_list)
 
     def __call__(self, string, split_type="word"):
         super().__init__()

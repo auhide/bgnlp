@@ -16,7 +16,7 @@ class Config:
 
 @dataclass
 class BgLemmatizerConfig(Config):
-    # Standart parameters:
+    # Standard parameters:
     device: str
     l_rate: float = 1e-3
     batch_size: float = 256
