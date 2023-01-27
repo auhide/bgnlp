@@ -8,7 +8,7 @@ class Tokenizer:
     pass
 
 
-class DefaultTokenizer(Tokenizer):
+class DefaultPreTokenizer(Tokenizer):
     # These actions are going to be executed sequentially, based on the order 
     # in which they are implemented in the class.
     actions_list = []
@@ -40,6 +40,6 @@ class DefaultTokenizer(Tokenizer):
         return self.string.strip()
 
 
-# tokenizer = DefaultTokenizer()
+# tokenizer = DefaultPreTokenizer()
 # tokens = tokenizer("Не мога да живея повече!!! Това не може да бъде по-трудно.")
 # print(tokens)

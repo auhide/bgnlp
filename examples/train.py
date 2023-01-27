@@ -7,7 +7,7 @@ from torchmetrics.classification import Accuracy, F1Score
 
 from bgnlp.tools.vocabs import get_vocab
 from bgnlp.tools.configs import BgLemmatizerConfig
-from bgnlp.tools.tokenizers import DefaultTokenizer
+from bgnlp.tools.tokenizers import DefaultPreTokenizer
 from bgnlp.lib.datasets import LemmatizationDataset
 from bgnlp.tools.trainers import BgLemmatizerTrainer
 
@@ -40,7 +40,7 @@ dataset_df = pd.read_csv(DATASET_PATH, sep="\t")
 
 # Initializing the pre-created Vocabulary and Tokenizer.
 vocab = get_vocab("symbols-vocab")
-tokenizer = DefaultTokenizer()
+tokenizer = DefaultPreTokenizer()
 
 # Initializing the Dataset.
 dataset = LemmatizationDataset(

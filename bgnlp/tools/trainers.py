@@ -112,15 +112,17 @@ class BgLemmatizerTrainer(Trainer):
 
         if log_words:
             seq2seq = trainer.train(
-                train_dataset=train_dataset, valid_dataset=valid_dataset,
+                train_dataset=self._dataset, valid_dataset=self._dataset,
                 batch_size=config.batch_size, epochs=config.epochs,
                 fixed_input=fixed_dataset.x.to(config.device), 
+                teacher_forcing_ratio=config.teacher_forcing_ratio,
                 metrics=metrics
             )
         else:
             seq2seq = trainer.train(
-                train_dataset=train_dataset, valid_dataset=valid_dataset,
+                train_dataset=self._dataset, valid_dataset=self._dataset,
                 batch_size=config.batch_size, epochs=config.epochs, 
+                teacher_forcing_ratio=config.teacher_forcing_ratio,
                 metrics=metrics
             )
 

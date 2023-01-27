@@ -36,3 +36,5 @@ class BgLemmatizerConfig(Config):
     # counted int the [START] and [END] tokens as well - hence the max. sizes are 15.
     max_word_size: int = 15
     max_lemma_size: int = 15
+    
+    teacher_forcing_ratio: float = 0.5

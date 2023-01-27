@@ -8,7 +8,7 @@ from torchtext.vocab import Vocab
 
 from bgnlp.tools.configs import Config
 from bgnlp.lib.datasets import LemmatizationDataset
-from bgnlp.tools.tokenizers import DefaultTokenizer
+from bgnlp.tools.tokenizers import DefaultPreTokenizer
 from bgnlp.models.seq2seq import Encoder, Attention, Decoder, Seq2Seq
 
 
@@ -26,7 +26,7 @@ torch.use_deterministic_algorithms(True)
 
 class BgLemmatizer:
     
-    def __init__(self, config: Config, vocab: Vocab, tokenizer=DefaultTokenizer()):
+    def __init__(self, config: Config, vocab: Vocab, tokenizer=DefaultPreTokenizer()):
         self.config = config
         self.vocab = vocab
         self.tokenizer = tokenizer
