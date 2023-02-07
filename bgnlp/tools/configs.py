@@ -38,3 +38,11 @@ class BgLemmatizerConfig(Config):
     max_lemma_size: int = 15
     
     teacher_forcing_ratio: float = 0.5
+
+
+@dataclass
+class BgPosConfig(Config):
+    model_path: str = os.path.join(
+        PACKAGE_DIR, "serialized", "models", "bg-pos-roberta.pt"
+    )
+    max_size: int = 15

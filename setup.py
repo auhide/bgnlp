@@ -11,7 +11,7 @@ REQUIREMENTS_PATH = os.path.join(ROOT, "requirements.txt")
 with codecs.open(README_PATH, encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
-VERSION = '0.0.4'
+VERSION = '0.0.5'
 DESCRIPTION = 'Package for Bulgarian Natural Language Processing.'
 
 
