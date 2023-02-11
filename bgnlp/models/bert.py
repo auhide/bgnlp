@@ -2,15 +2,18 @@ from torch import nn
 from transformers import RobertaModel, RobertaConfig
 
 
-class BgPosBert(nn.Module):
+# TODO: Add the model trainer.
+class BgPosRoBerta(nn.Module):
     
     def __init__(self, vocab, n_classes, dropout=0.1):
         super().__init__()
         
+        hidden_size = 126
+
         self.base_model = RobertaModel(
             RobertaConfig(
                 vocab_size=len(vocab),
-                hidden_size=126,
+                hidden_size=hidden_size,
                 num_hidden_layers=6,
                 num_attention_heads=6,
                 intermediate_size=512,
@@ -19,7 +22,7 @@ class BgPosBert(nn.Module):
         )
         
         self.dropout = nn.Dropout(dropout)
-        self.project = nn.Linear(126, n_classes)
+        self.project = nn.Linear(hidden_size, n_classes)
         
     def forward(self, x):
         # Taking the tensor representing the [CLS] token of the

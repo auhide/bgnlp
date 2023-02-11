@@ -26,10 +26,10 @@ class BgLemmatizerConfig(Config):
     )
 
     # Model parameters:
-    enc_embed_size: int = 256
-    dec_embed_size: int = 256
-    enc_hidden_size: int = 256
-    dec_hidden_size: int = 256
+    enc_embed_size: int = 64
+    dec_embed_size: int = 64
+    enc_hidden_size: int = 64
+    dec_hidden_size: int = 64
     enc_dropout: float = 0.3
     dec_dropout: float = 0.3
     # I've chosen these values since the maximum length of a word was 13 and I've
@@ -41,7 +41,7 @@ class BgLemmatizerConfig(Config):
 
 
 @dataclass
-class BgPosConfig(Config):
+class BgPosAnalyzerConfig(Config):
     model_path: str = os.path.join(
         PACKAGE_DIR, "serialized", "models", "bg-pos-roberta.pt"
     )
