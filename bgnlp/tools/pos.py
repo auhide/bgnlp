@@ -59,6 +59,10 @@ class PosTagger:
             "I": {
                 "en": "interjection",
                 "bg": "междуметие"
+            },
+            "U": {
+                "en": "punctuation",
+                "bg": "препинателен знак"
             }
         }
 
