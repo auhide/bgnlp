@@ -18,6 +18,10 @@ class PosTagger:
 
     def __init__(self, config: ModelConfig):
         self.config = config
+
+        self.tokenizer = self.get_tokenizer()
+        self.model = self.get_model().to(self.config.device)
+        
         # TODO: Have more descriptive titles. Figure out the full meanings of the tags.
         self.TAGS_MAPPING = {
             "N": {
@@ -68,9 +72,6 @@ class PosTagger:
 
     def __call__(self, text: str, max_len=64):
         self.max_len = max_len
-
-        self.tokenizer = self.get_tokenizer()
-        self.model = self.get_model().to(self.config.device)
 
         return self.predict(text)
 
@@ -128,7 +129,7 @@ class PosTagger:
                 self.config.model_path, 
                 quiet=False
             )
-            bert.load_state_dict(torch.load(self.config.model_path))
+            bert.load_state_dict(torch.load(self.config.model_path, map_location=self.config.device))
 
         return bert
 
