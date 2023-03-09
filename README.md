@@ -1,5 +1,9 @@
 # `bgnlp`: Model-first approach to Bulgarian NLP
 
+```sh
+pip install bgnlp
+```
+
 ## Package functionalities
 
 ### Part-of-speech tagging
