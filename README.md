@@ -1,4 +1,3 @@
-# Bulgarian Natural Language Processing package
 Package functionalities:
 - Part-of-speech tagging
     ```python
@@ -7,7 +6,7 @@ Package functionalities:
 
     config = PosTaggerConfig()
     pos = PosTagger(config=config)
-    
+
     print(pos("Това е библиотека за обработка на естествен език."))
     ```
     ```json
