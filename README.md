@@ -1,4 +1,4 @@
-# `bgnlp`: Model first approach to Bulgarian NLP
+# `bgnlp`: Model-first approach to Bulgarian NLP
 
 ## Package functionalities
 

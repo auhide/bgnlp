@@ -21,8 +21,8 @@ class PosTagger:
 
         self.tokenizer = self.get_tokenizer()
         self.model = self.get_model().to(self.config.device)
-        
-        # TODO: Have more descriptive titles. Figure out the full meanings of the tags.
+
+        # TODO: Have better descriptions. Figure out the full meanings of the tags.
         self.TAGS_MAPPING = {
             "N": {
                 "en": "noun",
