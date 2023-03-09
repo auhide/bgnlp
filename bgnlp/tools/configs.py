@@ -23,6 +23,7 @@ class PosTaggerConfig(ModelConfig):
     id2label: Dict[int, str] = field(default_factory=lambda: POS_ID2LABEL)
 
     device: str = "cpu"
+    model_url: str = "https://drive.google.com/uc?id=1MHADXPM5oYRMz4nyPqaKeW2zQSctOxBQ"
     model_path: str = os.path.join(
         PACKAGE_DIR, "serialized", "models", "lemma-bert-latest.pt"
     )

@@ -1,7 +1,9 @@
+import os
 import re
 from typing import List
 
 import torch
+import gdown
 from transformers import logging
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 
@@ -16,6 +18,7 @@ class PosTagger:
 
     def __init__(self, config: ModelConfig):
         self.config = config
+        # TODO: Have more descriptive titles. Figure out the full meanings of the tags.
         self.TAGS_MAPPING = {
             "N": {
                 "en": "noun",
@@ -31,7 +34,7 @@ class PosTagger:
             },
             "B": {
                 "en": "numeral",
-                "bg": "числително"
+                "bg": "числително име"
             },
             "V": {
                 "en": "verb",
@@ -111,12 +114,22 @@ class PosTagger:
         )
         bert.resize_token_embeddings(len(self.tokenizer))
 
-        bert.load_state_dict(torch.load(self.config.model_path))
+        if os.path.exists(self.config.model_path):
+            bert.load_state_dict(torch.load(self.config.model_path))
+        else:
+            # Downloading the model if it doesn't exist locally.
+            # The model is not deployed with the PyPI package - hence, the download below.
+            gdown.download(
+                self.config.model_url, 
+                self.config.model_path, 
+                quiet=False
+            )
+            bert.load_state_dict(torch.load(self.config.model_path))
 
         return bert
 
     @staticmethod
-    def _preprocess_text(text):
+    def _preprocess_text(text: str):
         text = re.sub(r"([.,!?:;])+", r" \1 ", text)
         text = re.sub(r"(\s+)", " ", text)
 
