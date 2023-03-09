@@ -119,7 +119,7 @@ class PosTagger:
         bert.resize_token_embeddings(len(self.tokenizer))
 
         if os.path.exists(self.config.model_path):
-            bert.load_state_dict(torch.load(self.config.model_path))
+            bert.load_state_dict(torch.load(self.config.model_path, map_location=self.config.device))
         else:
             # Downloading the model if it doesn't exist locally.
             # The model is not deployed with the PyPI package - hence, the download below.
