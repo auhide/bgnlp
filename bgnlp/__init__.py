@@ -1,4 +1,4 @@
-from bgnlp.tools.pos import PosTagger
+from bgnlp.tools.taggers import PosTagger
 from bgnlp.tools.configs import PosTaggerConfig
 
 

@@ -11,19 +11,31 @@ PACKAGE_DIR = os.path.dirname(sys.modules["bgnlp"].__file__)
 
 @dataclass
 class ModelConfig:
-    base_model_id: str
     model_path: str
     device: str = "cpu"
 
 
 @dataclass
 class PosTaggerConfig(ModelConfig):
+    device: str = "cpu"
+    model_url: str = "https://drive.google.com/uc?id=1MHADXPM5oYRMz4nyPqaKeW2zQSctOxBQ"
+    model_path: str = os.path.join(
+        PACKAGE_DIR, "serialized", "models", "pos-bert.pt"
+    )
+
     base_model_id: str = "rmihaylov/bert-base-bg"
     label2id: Dict[str, int] = field(default_factory=lambda: POS_LABEL2ID)
     id2label: Dict[int, str] = field(default_factory=lambda: POS_ID2LABEL)
 
+
+@dataclass
+class LemmaTaggerConfig(ModelConfig):
     device: str = "cpu"
-    model_url: str = "https://drive.google.com/uc?id=1MHADXPM5oYRMz4nyPqaKeW2zQSctOxBQ"
+    model_url: str = "https://drive.google.com/uc?id=1U0Tb1AN0Rzdz_WsjMayEKK1rHuyZWdfK"
     model_path: str = os.path.join(
-        PACKAGE_DIR, "serialized", "models", "lemma-bert-latest.pt"
+        PACKAGE_DIR, "serialized", "models", "lemma-bert.pt"
+    )
+
+    vocab_path: str = os.path.join(
+        PACKAGE_DIR, "serialized", "vocabs", "cb-vocab.pt"
     )

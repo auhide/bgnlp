@@ -1,20 +1,65 @@
 import os
 import re
-from typing import List
+from typing import List, Dict
+from abc import ABC, abstractmethod
 
 import torch
+from torch import nn
 import gdown
 from transformers import logging
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 
-from bgnlp.tools.configs import ModelConfig
+from bgnlp.models.bert import LemmaBert
+from bgnlp.tools.tokenizers import (
+    CharacterBasedPreTokenizer, CharacterBasedTokenizer
+)
+from bgnlp.tools.configs import LemmaTaggerConfig, ModelConfig, PosTaggerConfig
 
 
 # Logging only error messages from HuggingFace.
 logging.set_verbosity_error()
 
 
-class PosTagger:
+class BaseTagger(ABC):
+
+    @abstractmethod
+    def get_tokenizer(self):
+        pass
+
+    @abstractmethod
+    def get_model(self):
+        pass
+
+    @abstractmethod
+    def predict(self):
+        pass
+
+    def load_model(self, model_obj):
+        if os.path.exists(self.config.model_path):
+            model_obj.load_state_dict(torch.load(self.config.model_path, map_location=self.config.device))
+        else:
+            # Downloading the model if it doesn't exist locally.
+            # The model is not deployed with the PyPI package - hence, the download below.
+            gdown.download(
+                self.config.model_url, 
+                self.config.model_path, 
+                quiet=False
+            )
+            model_obj.load_state_dict(torch.load(self.config.model_path, map_location=self.config.device))
+
+        return model_obj
+
+
+class PosTagger(BaseTagger):
+    """Part-of-speech tagger. Uses a BERT architecture and is trained on the 
+    [Wiki1000+ Bulgarian corpus](http://dcl.bas.bg/wikiCorpus.html).
+
+    Usage:
+    
+
+    Args:
+        config (ModelConfig): Configuration of the PosTagger.
+    """
 
     def __init__(self, config: ModelConfig):
         self.config = config
@@ -70,12 +115,12 @@ class PosTagger:
             }
         }
 
-    def __call__(self, text: str, max_len=64):
+    def __call__(self, text: str, max_len=64) -> List[Dict[str, str]]:
         self.max_len = max_len
 
         return self.predict(text)
 
-    def predict(self, text: str):
+    def predict(self, text: str) -> List[Dict[str, str]]:
         text = PosTagger._preprocess_text(text)
 
         tokens_data = self.tokenizer(
@@ -111,25 +156,14 @@ class PosTagger:
     def get_tokenizer(self) -> AutoTokenizer:
         return AutoTokenizer.from_pretrained(self.config.base_model_id)
 
-    def get_model(self):
+    def get_model(self) -> nn.Module:
         bert = AutoModelForTokenClassification.from_pretrained(
             self.config.base_model_id, 
             num_labels=len(self.config.label2id), 
             label2id=self.config.label2id
         )
         bert.resize_token_embeddings(len(self.tokenizer))
-
-        if os.path.exists(self.config.model_path):
-            bert.load_state_dict(torch.load(self.config.model_path, map_location=self.config.device))
-        else:
-            # Downloading the model if it doesn't exist locally.
-            # The model is not deployed with the PyPI package - hence, the download below.
-            gdown.download(
-                self.config.model_url, 
-                self.config.model_path, 
-                quiet=False
-            )
-            bert.load_state_dict(torch.load(self.config.model_path, map_location=self.config.device))
+        bert = self.load_model(bert)
 
         return bert
 
@@ -140,7 +174,7 @@ class PosTagger:
 
         return text.strip()
     
-    def _format_prediction(self, input_tokens: List[str], prediction: List[str]):
+    def _format_prediction(self, input_tokens: List[str], prediction: List[str]) -> List[Dict[str, str]]:
         tokens = []
         curr_token = ""
         tags = []
@@ -181,8 +215,87 @@ class PosTagger:
 
         return result
 
-    def _get_tag_description(self, lang: str, tag: str):
+    def _get_tag_description(self, lang: str, tag: str) -> str:
         first_tag = tag[0]
         description = self.TAGS_MAPPING[first_tag][lang]
 
         return description
+
+
+class Lemmatizer(BaseTagger):
+
+    def __init__(self, config: ModelConfig):
+        self.config = config
+        self.tokenizer = self.get_tokenizer()
+        self.model = self.get_model()
+
+    def __call__(self, word: str, pos: str) -> str:
+        return self.predict(word, pos)
+
+    def get_tokenizer(self) -> CharacterBasedTokenizer:
+        vocab = torch.load(self.config.vocab_path)
+        pretokenizer = CharacterBasedPreTokenizer()
+
+        tokenizer = CharacterBasedTokenizer(
+            pretokenizer=pretokenizer,
+            vocab=vocab
+        )
+
+        return tokenizer
+
+    def get_model(self) -> nn.Module:
+        bert = LemmaBert(
+            vocab_size=len(self.tokenizer), 
+            output_size=len(self.tokenizer),
+            device=self.config.device
+        ).to(self.config.device)
+        bert = self.load_model(bert)
+
+        return bert
+
+    def predict(self, word: str, pos: str) -> str:
+        # Preparing the input.
+        tokens, attention_mask = self.tokenizer(word, pos)
+
+        tokens = torch.LongTensor(tokens).unsqueeze(0)
+        attention_mask = torch.LongTensor(attention_mask).unsqueeze(0)
+
+        self.model.eval()
+
+        with torch.no_grad():
+            pred = self.model(tokens, attention_mask=attention_mask).argmax(-1).squeeze(0).tolist()
+            pred = "".join(self.tokenizer.vocab.lookup_tokens(pred))
+            pred = re.findall(r"\[CLS\](.+?)\[SEP\]", pred)[0]
+
+        self.model.train()
+
+        if word[0].isupper():
+            pred = pred.capitalize()
+
+        return pred
+
+
+class LemmaTagger:
+
+    def __init__(self, config: ModelConfig):
+        self.config = config
+
+    def __call__(self, text: str, additional_info: bool = False) -> List[Dict[str, str]]:
+        pos = PosTagger(config=PosTaggerConfig())
+        lemma = Lemmatizer(config=LemmaTaggerConfig)
+        result = []
+
+        for pos_result in pos(text):
+            pos_result["lemma"] = lemma(
+                word=pos_result["word"],
+                pos=pos_result["tag"]
+            )
+            if additional_info:
+                result.append(pos_result)
+            else:
+                result.append({
+                    "word": pos_result["word"],
+                    "lemma": pos_result["lemma"]
+                })
+
+        return result
