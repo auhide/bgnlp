@@ -9,7 +9,7 @@ import gdown
 from transformers import logging
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 
-from bgnlp.models.bert import LemmaBert
+from bgnlp.models import LemmaBert
 from bgnlp.tools.tokenizers import (
     CharacterBasedPreTokenizer, CharacterBasedTokenizer
 )
