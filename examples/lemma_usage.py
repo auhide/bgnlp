@@ -1,9 +1,8 @@
-from bgnlp.tools.taggers import LemmaTagger
-from bgnlp.tools.configs import LemmaTaggerConfig
+from bgnlp import LemmaTaggerConfig, LemmaTagger
 
 
 if __name__ == "__main__":
-    lemma = LemmaTagger(config=LemmaTaggerConfig)
+    lemma = LemmaTagger(config=LemmaTaggerConfig())
     text = "Добре дошли!"
     print("Input:", text)
     print("Output:", lemma("Добре дошли"))
