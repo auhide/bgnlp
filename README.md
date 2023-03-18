@@ -11,10 +11,8 @@ pip install bgnlp
 ```python
 from bgnlp import PosTagger, PosTaggerConfig
 
-
 config = PosTaggerConfig()
 pos = PosTagger(config=config)
-
 print(pos("Това е библиотека за обработка на естествен език."))
 ```
 
@@ -65,4 +63,18 @@ print(pos("Това е библиотека за обработка на ест�
     "bg_desc": "препинателен знак",
     "en_desc": "punctuation"
 }]
+```
+
+### Lemmatization
+
+```python
+from bgnlp import LemmaTaggerConfig, LemmaTagger
+
+lemma = LemmaTagger(config=LemmaTaggerConfig())
+text = "Добре дошли!"
+print(lemma(text))
+```
+
+```bash
+[{'word': 'Добре', 'lemma': 'Добре'}, {'word': 'дошли', 'lemma': 'дойда'}, {'word': '!', 'lemma': '!'}]
 ```
