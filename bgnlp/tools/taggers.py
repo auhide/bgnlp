@@ -1,3 +1,6 @@
+"""
+Natural language Taggers for Bulgarian. They are all model-based.
+"""
 import os
 import re
 from typing import List, Dict
@@ -51,12 +54,9 @@ class BaseTagger(ABC):
 
 
 class PosTagger(BaseTagger):
-    """Part-of-speech tagger. Uses a BERT architecture and is trained on the 
+    """Part-of-speech tagger. Tagging is done using a BERT model trained on 
     [Wiki1000+ Bulgarian corpus](http://dcl.bas.bg/wikiCorpus.html).
-
-    Usage:
     
-
     Args:
         config (ModelConfig): Configuration of the PosTagger.
     """
@@ -116,11 +116,83 @@ class PosTagger(BaseTagger):
         }
 
     def __call__(self, text: str, max_len=64) -> List[Dict[str, str]]:
+        """Tag each one of the words in `text` with a part-of-speech tag.
+
+        Args:
+            text (str): Text in Bulgarian.
+            max_len (int, optional): The maximum number of words that you can have in `text`. Defaults to 64.
+
+        Returns:
+            List[Dict[str, str]]: List of dictionaries for each word and its tags.
+
+        Example::
+
+            >>> from bgnlp import PosTagger, PosTaggerConfig
+            >>> 
+            >>> 
+            >>> config = PosTaggerConfig()
+            >>> pos = PosTagger(config=config)
+            >>> pos("Това е библиотека за обработка на естествен език.")
+            [{
+                "word": "Това",
+                "tag": "PDOsn",
+                "bg_desc": "местоимение",
+                "en_desc": "pronoun"
+            }, {
+                "word": "е",
+                "tag": "VLINr3s",
+                "bg_desc": "глагол",
+                "en_desc": "verb"
+            }, {
+                "word": "библиотека",
+                "tag": "NCFsof",
+                "bg_desc": "съществително име",
+                "en_desc": "noun"
+            }, {
+                "word": "за",
+                "tag": "R",
+                "bg_desc": "предлог",
+                "en_desc": "preposition"
+            }, {
+                "word": "обработка",
+                "tag": "NCFsof",
+                "bg_desc": "съществително име",
+                "en_desc": "noun"
+            }, {
+                "word": "на",
+                "tag": "R",
+                "bg_desc": "предлог",
+                "en_desc": "preposition"
+            }, {
+                "word": "естествен",
+                "tag": "Asmo",
+                "bg_desc": "прилагателно име",
+                "en_desc": "adjective"
+            }, {
+                "word": "език",
+                "tag": "NCMsom",
+                "bg_desc": "съществително име",
+                "en_desc": "noun"
+            }, {
+                "word": ".",
+                "tag": "U",
+                "bg_desc": "препинателен знак",
+                "en_desc": "punctuation"
+            }]
+        """
         self.max_len = max_len
 
         return self.predict(text)
 
     def predict(self, text: str) -> List[Dict[str, str]]:
+        """Tag each one of the words in `text` with a part-of-speech tag.
+
+        Args:
+            text (str): Text in Bulgarian.
+
+        Returns:
+            List[Dict[str, str]]: List of dictionaries for each word and its tags.
+        """
         text = PosTagger._preprocess_text(text)
 
         tokens_data = self.tokenizer(
@@ -154,9 +226,20 @@ class PosTagger(BaseTagger):
         )
 
     def get_tokenizer(self) -> AutoTokenizer:
+        """Get the tokenizer for the used model.
+
+        Returns:
+            AutoTokenizer: HuggingFace AutoTokenizer.
+        """
         return AutoTokenizer.from_pretrained(self.config.base_model_id)
 
     def get_model(self) -> nn.Module:
+        """Get the model used for tagging. When this method is called for the first
+        time, the model is downloaded. Afterwards, it should be part of your package.
+
+        Returns:
+            nn.Module: PyTorch Module.
+        """
         bert = AutoModelForTokenClassification.from_pretrained(
             self.config.base_model_id, 
             num_labels=len(self.config.label2id), 
@@ -169,12 +252,37 @@ class PosTagger(BaseTagger):
 
     @staticmethod
     def _preprocess_text(text: str):
+        """Prepare the string `text` for the model. 
+        
+        This includes:
+        - Surrounding punctuation with whitespace
+        - Converting multiple consecutive whitespaces into one.
+
+        Args:
+            text (str): _description_
+
+        Returns:
+            str: _description_
+        """
         text = re.sub(r"([.,!?:;])+", r" \1 ", text)
         text = re.sub(r"(\s+)", " ", text)
 
         return text.strip()
     
     def _format_prediction(self, input_tokens: List[str], prediction: List[str]) -> List[Dict[str, str]]:
+        """Format the prediction returned from the model.
+
+        Since the tokenizer of the model is a subword tokenizer, the words
+        are split into multiple subwords. The task of this method is to merge 
+        them and then create a dictionaries with their tags.
+
+        Args:
+            input_tokens (List[str]): Input words (tokens) as strings.
+            prediction (List[str]): Predicted tags.
+
+        Returns:
+            List[Dict[str, str]]: All found words and their tags.
+        """
         tokens = []
         curr_token = ""
         tags = []
@@ -216,6 +324,15 @@ class PosTagger(BaseTagger):
         return result
 
     def _get_tag_description(self, lang: str, tag: str) -> str:
+        """Map `tag` to its description based on `lang`
+
+        Args:
+            lang (str): Language - either 'bg' or 'en'.
+            tag (str): PoS tag as a string.
+
+        Returns:
+            str: The hardcoded tag description, based on `self.TAGS_MAPPING`.
+        """
         first_tag = tag[0]
         description = self.TAGS_MAPPING[first_tag][lang]
 
@@ -223,6 +340,12 @@ class PosTagger(BaseTagger):
 
 
 class Lemmatizer(BaseTagger):
+    """Lemmatize a word. This is only for single-word lemmatization. If you want 
+    to lemmatize multiple words, please use :ref:`LemmaTagger`.
+
+    Args:
+        config (ModelConfig): Configuration of the :ref:`LemmaBert` model.
+    """
 
     def __init__(self, config: ModelConfig):
         self.config = config
@@ -230,9 +353,32 @@ class Lemmatizer(BaseTagger):
         self.model = self.get_model()
 
     def __call__(self, word: str, pos: str) -> str:
+        """Convert `word` into its lemma.
+
+        Args:
+            word (str): Word in Bulgarian.
+            pos (str): Its part-of-speech tag.
+
+        Returns:
+            str: The lemma of `word`.
+
+        Example::
+            >>> from bgnlp import LemmaTaggerConfig
+            >>> from bgnlp.tools.taggers import Lemmatizer
+            >>> 
+            >>> 
+            >>> lemma = Lemmatizer(config=LemmaTaggerConfig())
+            >>> lemma("езикът", "Ns")
+            език
+        """
         return self.predict(word, pos)
 
     def get_tokenizer(self) -> CharacterBasedTokenizer:
+        """Get the tokenizer used by `LemmaBert`. It is a character-based one.
+
+        Returns:
+            CharacterBasedTokenizer: The tokenizer.
+        """
         vocab = torch.load(self.config.vocab_path)
         pretokenizer = CharacterBasedPreTokenizer()
 
@@ -244,6 +390,11 @@ class Lemmatizer(BaseTagger):
         return tokenizer
 
     def get_model(self) -> nn.Module:
+        """Get the `LemmaBert` model.
+
+        Returns:
+            nn.Module: PyTorch Module.
+        """
         bert = LemmaBert(
             vocab_size=len(self.tokenizer), 
             output_size=len(self.tokenizer),
@@ -254,6 +405,15 @@ class Lemmatizer(BaseTagger):
         return bert
 
     def predict(self, word: str, pos: str) -> str:
+        """Convert `word` into its lemma.
+
+        Args:
+            word (str): Word in Bulgarian.
+            pos (str): Its part-of-speech tag.
+
+        Returns:
+            str: The lemma of `word`.
+        """
         # Preparing the input.
         tokens, attention_mask = self.tokenizer(word, pos)
 
@@ -276,11 +436,34 @@ class Lemmatizer(BaseTagger):
 
 
 class LemmaTagger:
+    """Find the lemmas of a string with one or more words.
+
+    Args:
+        config (ModelConfig): Configuration of the :ref:`LemmaBert` model.
+    """
 
     def __init__(self, config: ModelConfig):
         self.config = config
 
     def __call__(self, text: str, additional_info: bool = False) -> List[Dict[str, str]]:
+        """Find the lemmas of `text`. `text` should preferably be a semantically correct sentence or sentences, since the lemma sometimes changes based on context.
+
+        Args:
+            text (str): String with one or more Bulgarian words.
+            additional_info (bool, optional): Whether the output should constist of more data about each word (mainly PoS information). Defaults to False.
+
+        Returns:
+            List[Dict[str, str]]: List of dictionaries. Each dictionary has a word and a `lemma` key with a value - its lemma. If `additional_info`=True, the dictionary has PoS data.
+
+        Example::
+            >>> from bgnlp import LemmaTaggerConfig, LemmaTagger
+            >>> 
+            >>> 
+            >>> lemma = LemmaTagger(config=LemmaTaggerConfig())
+            >>> text = "Добре дошли!"
+            >>> print("Input:", text)
+            >>> print("Output:", lemma(text))
+        """
         pos = PosTagger(config=PosTaggerConfig())
         lemma = Lemmatizer(config=LemmaTaggerConfig)
         result = []

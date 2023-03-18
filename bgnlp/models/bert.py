@@ -29,6 +29,6 @@ class LemmaBert(nn.Module):
         
         self.project = nn.Linear(hidden_size, output_size)
         
-    def forward(self, input_ids, attention_mask=None) -> torch.Tensor:
+    def forward(self, input_ids: torch.LongTensor, attention_mask=None) -> torch.Tensor:
         out = self.base_model(input_ids, attention_mask=attention_mask).last_hidden_state
         return self.project(out)
