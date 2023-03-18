@@ -1,6 +1,6 @@
 import os
 import re
-import codecs
+from pathlib import Path
 from setuptools import setup, find_packages
 
 
@@ -8,8 +8,8 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 README_PATH = os.path.join(ROOT, "README.md")
 REQUIREMENTS_PATH = os.path.join(ROOT, "requirements.txt")
 
-with codecs.open(README_PATH, encoding="utf-8") as fh:
-    long_description = "\n" + fh.read()
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 VERSION = '0.0.10'
 DESCRIPTION = 'Package for Bulgarian Natural Language Processing (NLP)'
