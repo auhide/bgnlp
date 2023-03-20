@@ -39,3 +39,11 @@ class LemmaTaggerConfig(ModelConfig):
     vocab_path: str = os.path.join(
         PACKAGE_DIR, "serialized", "vocabs", "cb-vocab.pt"
     )
+
+
+@dataclass
+class NerTaggerConfig(ModelConfig):
+    device: str = "cpu"
+    # Since I have uploaded this model to Huggingface's Model Hub, it is being 
+    # downloaded only using this model ID:
+    model_path: str = "auhide/bert-bg-ner"

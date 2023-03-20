@@ -13,6 +13,7 @@ from transformers import logging
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 
 from bgnlp.models import LemmaBert
+from bgnlp.tools.mixins import SubwordMixin
 from bgnlp.tools.tokenizers import (
     CharacterBasedPreTokenizer, CharacterBasedTokenizer
 )
@@ -53,7 +54,7 @@ class BaseTagger(ABC):
         return model_obj
 
 
-class PosTagger(BaseTagger):
+class PosTagger(BaseTagger, SubwordMixin):
     """Part-of-speech tagger. Tagging is done using a BERT model trained on 
     [Wiki1000+ Bulgarian corpus](http://dcl.bas.bg/wikiCorpus.html).
     
@@ -63,7 +64,6 @@ class PosTagger(BaseTagger):
 
     def __init__(self, config: ModelConfig):
         self.config = config
-
         self.tokenizer = self.get_tokenizer()
         self.model = self.get_model().to(self.config.device)
 
@@ -283,28 +283,11 @@ class PosTagger(BaseTagger):
         Returns:
             List[Dict[str, str]]: All found words and their tags.
         """
-        tokens = []
-        curr_token = ""
         tags = []
 
-        # Merging the subwords into words and removing the '▁' infront of the tokens.
-        for token in input_tokens[1:]:
-            if token == "[SEP]":
-                curr_token = curr_token.replace("▁", "")
-                tokens.append(curr_token)
-                break
-
-            if "▁" in token and curr_token == "":
-                curr_token += token
-
-            elif "▁" in token and curr_token != "":
-                curr_token = curr_token.replace("▁", "")
-                tokens.append(curr_token)
-                curr_token = ""
-                curr_token += token
-
-            elif "▁" not in token:
-                curr_token += token
+        # This method is taken from the SubwordMixin class.
+        # Here, I am passing all tokens except for the 1st one - [CLS].
+        tokens = self.subwords_to_words(input_tokens[1:])
 
         # Getting all predicted tokens (except [CLS]) up until [SEP].
         for token in prediction[1:]:
@@ -480,5 +463,79 @@ class LemmaTagger:
                     "word": pos_result["word"],
                     "lemma": pos_result["lemma"]
                 })
+
+        return result
+
+
+class NerTagger(BaseTagger, SubwordMixin):
+
+    def __init__(self, config: ModelConfig):
+        self.config = config
+        self.tokenizer = self.get_tokenizer()
+        self.model = self.get_model()
+
+    def __call__(self, text: str):
+        return self.predict(text)
+
+    def get_tokenizer(self):
+        return AutoTokenizer.from_pretrained(self.config.model_path)
+
+    def get_model(self):
+        return AutoModelForTokenClassification.from_pretrained(self.config.model_path)
+
+    def predict(
+        self, 
+        text, 
+        label2id={
+            0: "O",
+            1: "B-PER", 2: "I-PER", 
+            3: "B-ORG", 4: "I-ORG", 
+            5: "B-LOC", 6: "I-LOC"
+        }
+    ):
+        tokens_data = self.tokenizer(text)
+        tokens = self.tokenizer.convert_ids_to_tokens(tokens_data["input_ids"])
+        words = self.subwords_to_words(tokens)
+
+        input_ids = torch.LongTensor(tokens_data["input_ids"]).unsqueeze(0)
+        attention_mask = torch.LongTensor(tokens_data["attention_mask"]).unsqueeze(0)
+
+        out = self.model(input_ids, attention_mask=attention_mask).logits
+        out = out.argmax(-1).squeeze(0).tolist()
+
+        prediction = [label2id[idx] if idx in label2id else idx for idx in out]
+
+        return self._merge_words_and_predictions(
+            words=words, entities=prediction
+        )
+    
+    def _merge_words_and_predictions(self, words: List[str], entities: List[str]) -> List[Dict[str, str]]:
+        result = []
+        curr_word = []
+
+        for i, (word, entity) in enumerate(zip(words[1:], entities[1:])):
+            if "B-" in entity:
+                if curr_word:
+                    curr_word = " ".join(curr_word)
+                    result.append({
+                        "word": curr_word,
+                        "entity_group": entities[i][2:]
+                    })
+                    curr_word = [word]
+                else:
+                    curr_word.append(word)
+
+            if "I-" in entity:
+                curr_word.append(word)
+            
+            if "O" == entity:
+                if curr_word:
+                    curr_word = " ".join(curr_word)
+                    result.append({
+                        "word": curr_word,
+                        "entity_group": entities[i][2:]
+                    })
+                
+                curr_word = []
 
         return result

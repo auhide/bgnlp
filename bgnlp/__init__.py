@@ -1,5 +1,13 @@
-from bgnlp.tools.taggers import PosTagger, LemmaTagger
-from bgnlp.tools.configs import PosTaggerConfig, LemmaTaggerConfig
+from bgnlp.tools.taggers import (
+    PosTagger, 
+    LemmaTagger, 
+    NerTagger
+)
+from bgnlp.tools.configs import (
+    PosTaggerConfig, 
+    LemmaTaggerConfig, 
+    NerTaggerConfig
+)
 
 
-__version__ = "0.0.11"
+__version__ = "0.0.12"

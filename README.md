@@ -7,10 +7,11 @@ pip install bgnlp
 
 ## Package functionalities
 
-### Part-of-speech tagging
+### Part-of-speech (PoS) tagging
 
 ```python
 from bgnlp import PosTagger, PosTaggerConfig
+
 
 config = PosTaggerConfig()
 pos = PosTagger(config=config)
@@ -71,6 +72,7 @@ print(pos("Това е библиотека за обработка на ест�
 ```python
 from bgnlp import LemmaTaggerConfig, LemmaTagger
 
+
 lemma = LemmaTagger(config=LemmaTaggerConfig())
 text = "Добре дошли!"
 print(lemma(text))
@@ -78,4 +80,27 @@ print(lemma(text))
 
 ```bash
 [{'word': 'Добре', 'lemma': 'Добре'}, {'word': 'дошли', 'lemma': 'дойда'}, {'word': '!', 'lemma': '!'}]
+```
+
+### Named Entity Recognition (NER) tagging
+
+Currently, the available NER tags are:
+- `PER` - Person
+- `ORG` - Organization
+- `LOC` - Location
+
+```python
+from bgnlp import NerTagger, NerTaggerConfig
+
+
+ner = NerTagger(config=NerTaggerConfig())
+text = "Барух Спиноза е роден в Амстердам"
+
+print(f"Input: {text}")
+print("Result:", ner(text))
+```
+
+```bash
+Input: Барух Спиноза е роден в Амстердам
+Result: [{'word': 'Барух Спиноза', 'entity_group': 'PER'}, {'word': 'Амстердам', 'entity_group': 'LOC'}]
 ```
