@@ -468,13 +468,42 @@ class LemmaTagger:
 
 
 class NerTagger(BaseTagger, SubwordMixin):
+    """Named Entity Recognition (NER) tagging for Bulgarian text.
+
+    Args:
+        config (ModelConfig): Configuration of the NerTagger.
+    """
 
     def __init__(self, config: ModelConfig):
         self.config = config
         self.tokenizer = self.get_tokenizer()
         self.model = self.get_model()
 
-    def __call__(self, text: str):
+    def __call__(self, text: str) -> List[Dict[str, str]]:
+        """Find entities in `text`. These entities may be:
+        - `PER` - Person
+        - `ORG` - Organization
+        - `LOC` - Location
+
+        Args:
+            text (str): String of Bulgarian words.
+
+        Returns:
+            List[Dict[str, str]]: List of dictionaries. Each dictionary has a word and its NER tag.
+
+        Example::
+            >>> from bgnlp import NerTagger, NerTaggerConfig
+
+
+            >>> ner = NerTagger(config=NerTaggerConfig())
+            >>> text = "Барух Спиноза е роден в Амстердам"
+
+            >>> print(f"Input: {text}")
+            >>> print("Result:", ner(text))
+            Input: Барух Спиноза е роден в Амстердам
+            Result: [{'word': 'Барух Спиноза', 'entity_group': 'PER'}, {'word': 'Амстердам', 'entity_group': 'LOC'}]
+
+        """
         return self.predict(text)
 
     def get_tokenizer(self):
@@ -485,14 +514,14 @@ class NerTagger(BaseTagger, SubwordMixin):
 
     def predict(
         self, 
-        text, 
+        text: str, 
         label2id={
             0: "O",
             1: "B-PER", 2: "I-PER", 
             3: "B-ORG", 4: "I-ORG", 
             5: "B-LOC", 6: "I-LOC"
         }
-    ):
+    ) -> List[Dict[str, str]]:
         tokens_data = self.tokenizer(text)
         tokens = self.tokenizer.convert_ids_to_tokens(tokens_data["input_ids"])
         words = self.subwords_to_words(tokens)
