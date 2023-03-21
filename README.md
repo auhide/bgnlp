@@ -82,6 +82,15 @@ print(lemma(text))
 [{'word': 'Добре', 'lemma': 'Добре'}, {'word': 'дошли', 'lemma': 'дойда'}, {'word': '!', 'lemma': '!'}]
 ```
 
+```python
+# Generating a string of lemmas.
+print(lemma(text, as_string=True))
+```
+
+```bash
+Добре дойда!
+```
+
 ### Named Entity Recognition (NER) tagging
 
 Currently, the available NER tags are:
