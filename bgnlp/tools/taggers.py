@@ -428,11 +428,12 @@ class LemmaTagger:
     def __init__(self, config: ModelConfig):
         self.config = config
 
-    def __call__(self, text: str, additional_info: bool = False) -> List[Dict[str, str]]:
+    def __call__(self, text: str, as_string: bool = False, additional_info: bool = False) -> List[Dict[str, str]]:
         """Find the lemmas of `text`. `text` should preferably be a semantically correct sentence or sentences, since the lemma sometimes changes based on context.
 
         Args:
             text (str): String with one or more Bulgarian words.
+            as_string(str): Whether the lemmatization result should be a string or a dictionary.
             additional_info (bool, optional): Whether the output should constist of more data about each word (mainly PoS information). Defaults to False.
 
         Returns:
@@ -446,23 +447,86 @@ class LemmaTagger:
             >>> text = "Добре дошли!"
             >>> print("Input:", text)
             >>> print("Output:", lemma(text))
+            [{'word': 'Добре', 'lemma': 'Добре'}, {'word': 'дошли', 'lemma': 'дойда'}, {'word': '!', 'lemma': '!'}]
+
+            >>> lemma = LemmaTagger(config=LemmaTaggerConfig())
+            >>> text = "Добре дошли!"
+            >>> print("Input:", text)
+            >>> print("Output:", lemma(text, as_string=True))
+            Input: Добре дошли!
+            Output: Добре дойда!
         """
+        self.additional_info = additional_info
+
         pos = PosTagger(config=PosTaggerConfig())
-        lemma = Lemmatizer(config=LemmaTaggerConfig)
+        lemma = Lemmatizer(config=self.config)
+
+        if as_string:
+            return self._str_predict(
+                text=text,
+                pos_model=pos,
+                lemma_model=lemma
+            )
+        
+        return self._dict_predict(
+            text=text, 
+            pos_model=pos,
+            lemma_model=lemma
+        )
+
+    def _dict_predict(self, text: str, pos_model: PosTagger, lemma_model: Lemmatizer) -> List[Dict[str, str]]:
+        """Find the lemmas of each word in `text`. Then, return a dictionary
+        with each word and its lemma.
+
+        Args:
+            text (str): Bulgarian text.
+            pos_model (PosTagger): Part-of-Speech model.
+            lemma_model (Lemmatizer): Lemmatization model.
+
+        Returns:
+            List[Dict[str, str]]: List of dictionaries. Each dictionary has a word and its lemma.
+        """
         result = []
 
-        for pos_result in pos(text):
-            pos_result["lemma"] = lemma(
+        for pos_result in pos_model(text):
+            pos_result["lemma"] = lemma_model(
                 word=pos_result["word"],
                 pos=pos_result["tag"]
             )
-            if additional_info:
+            if self.additional_info:
                 result.append(pos_result)
             else:
                 result.append({
                     "word": pos_result["word"],
                     "lemma": pos_result["lemma"]
                 })
+
+        return result
+
+    def _str_predict(self, text: str, pos_model: PosTagger, lemma_model: Lemmatizer) -> str:
+        """Find the lemmas of `text` and return a string with them.
+
+        Args:
+            text (str): Bulgarian text.
+            pos_model (PosTagger): Part-of-speech model.
+            lemma_model (Lemmatizer): Lemmatization model.
+
+        Returns:
+            str: String with the lemmas of `text`.
+        """
+        result = []
+
+        for pos_result in pos_model(text):
+            pos_result["lemma"] = lemma_model(
+                word=pos_result["word"],
+                pos=pos_result["tag"]
+            )
+
+            result.append(pos_result["lemma"])
+
+        result = " ".join(result)
+        # Removing the left whitespace around punctuation.
+        result = re.sub(r"\s([,.\?\!\:\;]+)\s?", r"\1 ", result)
 
         return result
 
