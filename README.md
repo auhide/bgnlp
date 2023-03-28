@@ -1,7 +1,7 @@
 # **bgnlp**: Model-first approach to Bulgarian NLP
 <a href="https://colab.research.google.com/drive/1etvcxad0f754pjSdjremDftq16o_oMTh?usp=sharing"><img src="https://camo.githubusercontent.com/84f0493939e0c4de4e6dbe113251b4bfb5353e57134ffd9fcab6b8714514d4d1/68747470733a2f2f636f6c61622e72657365617263682e676f6f676c652e636f6d2f6173736574732f636f6c61622d62616467652e737667" alt="Open In Colab" data-canonical-src="https://colab.research.google.com/assets/colab-badge.svg" style="max-width: 100%;"></a>
 
-[![Downloads](https://static.pepy.tech/personalized-badge/bgnlp?period=total&units=international_system&left_color=grey&right_color=blue&left_text=pip%20downloads)](https://pepy.tech/project/bgnlp)
+[![Downloads](https://static.pepy.tech/personalized-badge/bgnlp?period=total&units=international_system&left_color=grey&right_color=blue&left_text=pip%20downloads)](https://pypi.org/project/bgnlp/)
 
 ```sh
 pip install bgnlp
