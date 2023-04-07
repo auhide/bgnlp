@@ -11,14 +11,14 @@ REQUIREMENTS_PATH = os.path.join(ROOT, "requirements.txt")
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text(encoding="utf-8")
 
-VERSION = '0.1.3'
+VERSION = '0.1.4'
 DESCRIPTION = 'Package for Bulgarian Natural Language Processing (NLP)'
 
 
 def _get_requirements(path):
     with open(path, "r") as f:
         requirements_str = f.read()
-        packages = re.findall(r"(.+==[^\n]+)\n", requirements_str)
+        packages = re.findall(r"(.+=?=?[^\n]+)\n", requirements_str)
         return packages
 
 
