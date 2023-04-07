@@ -1,8 +1,7 @@
-# TODO: Update the versions of the libraries.
 torch
 numpy
 pandas
 torchmetrics
 torchtext
-gdown==4.6.0
 transformers
+gdown
