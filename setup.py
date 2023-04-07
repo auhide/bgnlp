@@ -11,7 +11,7 @@ REQUIREMENTS_PATH = os.path.join(ROOT, "requirements.txt")
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text(encoding="utf-8")
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 DESCRIPTION = 'Package for Bulgarian Natural Language Processing (NLP)'
 
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
         install_requires=_get_requirements(REQUIREMENTS_PATH),
         keywords=['pytorch', 'nlp', 'bulgaria', 'machine learning', "deep learning", "AI"],
         classifiers=[
-            "Development Status :: 1 - Planning",
+            "Development Status :: 5 - Production/Stable",
             "Intended Audience :: Developers",
 
             'Topic :: Scientific/Engineering',
