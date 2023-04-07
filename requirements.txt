@@ -1,8 +1,8 @@
 # TODO: Update the versions of the libraries.
-torch==1.13.0
-numpy==1.22.4
-pandas==1.4.3
-torchmetrics==0.11.0
-torchtext==0.6.0
+torch
+numpy
+pandas
+torchmetrics
+torchtext
 gdown==4.6.0
-transformers==4.26.0
+transformers
