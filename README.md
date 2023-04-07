@@ -130,6 +130,7 @@ ner = NerTagger(config=config)
 
 You can also change the path to the model weights. For `NerTagger` you can directly pass the HuggingFace's Model Hub path. All other taggers use weights uploaded to Google Drive.
 ```python
+# Define the path to the model weights. It can be a single .pt file or a path to HuggingFace's Model Hub (only for NerTagger).
 config = NerTaggerConfig(model_path="path/to/model")
 ner = NerTagger(config=config)
 # ...
