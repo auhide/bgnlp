@@ -115,3 +115,23 @@ print("Result:", ner(text))
 Input: Барух Спиноза е роден в Амстердам
 Result: [{'word': 'Барух Спиноза', 'entity_group': 'PER'}, {'word': 'Амстердам', 'entity_group': 'LOC'}]
 ```
+
+
+### Using a Config object
+A tagger Config is used to define the underlying model. 
+
+You can change the device on which it makes inference:
+```python
+# Make inference using the GPU (by default it is "cpu"):
+config = NerTaggerConfig(device="cuda")
+ner = NerTagger(config=config)
+# ...
+```
+
+You can also change the path to the model weights. For `NerTagger` you can directly pass the HuggingFace's Model Hub path. All other taggers use weights uploaded to Google Drive.
+```python
+config = NerTaggerConfig(model_path="path/to/model")
+ner = NerTagger(config=config)
+# ...
+```
+Please, note that the model should be of the same architecture as the one used by the certain Tagger.

@@ -128,8 +128,6 @@ class PosTagger(BaseTagger, SubwordMixin):
         Example::
 
             >>> from bgnlp import PosTagger, PosTaggerConfig
-            >>> 
-            >>> 
             >>> config = PosTaggerConfig()
             >>> pos = PosTagger(config=config)
             >>> pos("Това е библиотека за обработка на естествен език.")
@@ -348,8 +346,6 @@ class Lemmatizer(BaseTagger):
         Example::
             >>> from bgnlp import LemmaTaggerConfig
             >>> from bgnlp.tools.taggers import Lemmatizer
-            >>> 
-            >>> 
             >>> lemma = Lemmatizer(config=LemmaTaggerConfig())
             >>> lemma("езикът", "Ns")
             език
@@ -441,8 +437,6 @@ class LemmaTagger:
 
         Example::
             >>> from bgnlp import LemmaTaggerConfig, LemmaTagger
-            >>> 
-            >>> 
             >>> lemma = LemmaTagger(config=LemmaTaggerConfig())
             >>> text = "Добре дошли!"
             >>> print("Input:", text)
