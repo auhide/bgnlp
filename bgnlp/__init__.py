@@ -12,7 +12,7 @@ from bgnlp.tools.configs import (
 
 pos = PosTagger(config=PosTaggerConfig())
 lemmatize = LemmaTagger(config=LemmaTaggerConfig())
-ner = NerTagger(conifg=NerTaggerConfig())
+ner = NerTagger(config=NerTaggerConfig())
 
 
 __version__ = "0.2.0"
