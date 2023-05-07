@@ -10,4 +10,9 @@ from bgnlp.tools.configs import (
 )
 
 
-__version__ = "0.1.4"
+pos = PosTagger(config=PosTaggerConfig())
+lemmatize = LemmaTagger(config=LemmaTaggerConfig())
+ner = NerTagger(config=NerTaggerConfig())
+
+
+__version__ = "0.2.0"

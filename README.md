@@ -12,11 +12,9 @@ pip install bgnlp
 ### Part-of-speech (PoS) tagging
 
 ```python
-from bgnlp import PosTagger, PosTaggerConfig
+from bgnlp import pos
 
 
-config = PosTaggerConfig()
-pos = PosTagger(config=config)
 print(pos("Това е библиотека за обработка на естествен език."))
 ```
 
@@ -72,12 +70,11 @@ print(pos("Това е библиотека за обработка на ест�
 ### Lemmatization
 
 ```python
-from bgnlp import LemmaTaggerConfig, LemmaTagger
+from bgnlp import lemmatize
 
 
-lemma = LemmaTagger(config=LemmaTaggerConfig())
 text = "Добре дошли!"
-print(lemma(text))
+print(lemmatize(text))
 ```
 
 ```bash
@@ -86,7 +83,7 @@ print(lemma(text))
 
 ```python
 # Generating a string of lemmas.
-print(lemma(text, as_string=True))
+print(lemmatize(text, as_string=True))
 ```
 
 ```bash
@@ -101,10 +98,9 @@ Currently, the available NER tags are:
 - `LOC` - Location
 
 ```python
-from bgnlp import NerTagger, NerTaggerConfig
+from bgnlp import ner
 
 
-ner = NerTagger(config=NerTaggerConfig())
 text = "Барух Спиноза е роден в Амстердам"
 
 print(f"Input: {text}")
