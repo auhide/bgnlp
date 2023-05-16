@@ -3,7 +3,7 @@ Natural language Taggers for Bulgarian. They are all model-based.
 """
 import os
 import re
-from typing import List, Dict
+from typing import List, Dict, Any
 from abc import ABC, abstractmethod
 
 import torch
@@ -17,7 +17,7 @@ from bgnlp.tools.mixins import SubwordMixin
 from bgnlp.tools.tokenizers import (
     CharacterBasedPreTokenizer, CharacterBasedTokenizer
 )
-from bgnlp.tools.configs import LemmaTaggerConfig, ModelConfig, PosTaggerConfig
+from bgnlp.tools.configs import ModelConfig, PosTaggerConfig
 
 
 # Logging only error messages from HuggingFace.
@@ -127,9 +127,7 @@ class PosTagger(BaseTagger, SubwordMixin):
 
         Example::
 
-            >>> from bgnlp import PosTagger, PosTaggerConfig
-            >>> config = PosTaggerConfig()
-            >>> pos = PosTagger(config=config)
+            >>> from bgnlp import pos
             >>> pos("Това е библиотека за обработка на естествен език.")
             [{
                 "word": "Това",
@@ -436,17 +434,15 @@ class LemmaTagger:
             List[Dict[str, str]]: List of dictionaries. Each dictionary has a word and a `lemma` key with a value - its lemma. If `additional_info`=True, the dictionary has PoS data.
 
         Example::
-            >>> from bgnlp import LemmaTaggerConfig, LemmaTagger
-            >>> lemma = LemmaTagger(config=LemmaTaggerConfig())
+            >>> from bgnlp import lemmatize
             >>> text = "Добре дошли!"
+            >>> # Return the lemmas as a dictionary.
             >>> print("Input:", text)
-            >>> print("Output:", lemma(text))
+            >>> print("Output:", lemmatize(text))
             [{'word': 'Добре', 'lemma': 'Добре'}, {'word': 'дошли', 'lemma': 'дойда'}, {'word': '!', 'lemma': '!'}]
 
-            >>> lemma = LemmaTagger(config=LemmaTaggerConfig())
-            >>> text = "Добре дошли!"
-            >>> print("Input:", text)
-            >>> print("Output:", lemma(text, as_string=True))
+            >>> # Or return the lemmas as a string.
+            >>> print("Output:", lemmatize(text, as_string=True))
             Input: Добре дошли!
             Output: Добре дойда!
         """
@@ -550,12 +546,8 @@ class NerTagger(BaseTagger, SubwordMixin):
             List[Dict[str, str]]: List of dictionaries. Each dictionary has a word and its NER tag.
 
         Example::
-            >>> from bgnlp import NerTagger, NerTaggerConfig
-
-
-            >>> ner = NerTagger(config=NerTaggerConfig())
+            >>> from bgnlp import ner
             >>> text = "Барух Спиноза е роден в Амстердам"
-
             >>> print(f"Input: {text}")
             >>> print("Result:", ner(text))
             Input: Барух Спиноза е роден в Амстердам
@@ -626,3 +618,180 @@ class NerTagger(BaseTagger, SubwordMixin):
                 curr_word = []
 
         return result
+
+
+class KeywordsTagger(BaseTagger):
+    """Keyword Extraction tagger for Bulgarian texts.
+
+    Args:
+        config (ModelConfig): The model configuration.
+    """
+
+    def __init__(self, config: ModelConfig):
+        self.config = config
+        self.model = self.get_model()
+        self.tokenizer = self.get_tokenizer()
+
+    def __call__(self, text: str, threshold: float = 0.5) -> List[Dict[str, Any]]:
+        """Extract keywords from Bulgarian texts.
+
+        Args:
+            text (str): The source text from which you are going to extract.
+            threshold (float, optional): Threshold based on which some of the keywords with lower probabilties might be excluded. Defaults to 0.5.
+        
+        Returns:
+            List[Dict[str, Any]]: List of dictionaries describing each keyword in `text`.
+
+        Example::
+            >>> from bgnlp import extract_keywords
+            >>> with open("input_text.txt", "r", encoding="utf-8") as f:
+            >>>     text = f.read()
+            >>> # Here threshold is optional, it defaults to 0.5.
+            >>> extract_keywords(text, threshold=0.6)
+            [{'keyword': 'Еманюел Макрон', 'score': 0.8759163320064545},
+            {'keyword': 'Г-7', 'score': 0.5938143730163574},
+            {'keyword': 'Япония', 'score': 0.607077419757843}]
+        """
+        return self.predict(text, threshold)
+
+    def get_tokenizer(self):
+        return AutoTokenizer.from_pretrained(self.config.model_path)
+
+    def get_model(self):
+        return AutoModelForTokenClassification.from_pretrained(self.config.model_path)
+
+    def predict(self, text: str, threshold: float = 0.5) -> List[Dict[str, Any]]:
+        """Extract keywords from Bulgarian texts.
+
+        Args:
+            text (str): The source text from which you are going to extract.
+            threshold (float, optional): Threshold based on which some of the keywords with lower probabilties might be excluded. Defaults to 0.5.
+        
+        Returns:
+            List[Dict[str, Any]]: List of dictionaries describing each keyword in `text`.
+
+        Example::
+            >>> from bgnlp import extract_keywords
+            >>> with open("input_text.txt", "r", encoding="utf-8") as f:
+            >>>     text = f.read()
+            >>> # Here threshold is optional, it defaults to 0.5.
+            >>> extract_keywords(text, threshold=0.6)
+            [{'keyword': 'Еманюел Макрон', 'score': 0.8759163320064545},
+            {'keyword': 'Г-7', 'score': 0.5938143730163574},
+            {'keyword': 'Япония', 'score': 0.607077419757843}]
+        """
+        keywords = self._extract_keywords(text, threshold=threshold)
+
+        return self._format_keywords(keywords)
+    
+    def _format_keywords(self, keywords: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Mainly responsible for the merging of subkeywords into keywords, i.e. when
+        the keyword consists of multiple words - 'Адам Фаузи', the two subkeywords 'Адам' and 'Фаузи'
+        are merged into one. This method also merges the probabilities by calculating
+        their average.
+
+        Args:
+            keywords (List[Dict[str, Any]]): Keywords with their `entity_group` and probability `score`.
+
+        Returns:
+            List[Dict[str, Any]]: Merged keywords (in some cases) with their probability scores.
+        """
+        formatted_keywords = []
+        # This is used for keywords that have multiple words.
+        current_keywords = []
+        scores = []
+
+        for i, kw in enumerate(keywords):
+            if kw["entity_group"] == "B-KWD":
+                if i > 0:
+                    formatted_keywords.append({
+                        "keyword": " ".join(current_keywords),
+                        # Calculating the average score of all keywords in `current_keywords`.
+                        "score": sum(scores) / len(scores)
+                    })
+                current_keywords = []
+                scores = []
+                current_keywords.append(kw["entity"])
+                scores.append(kw["score"])
+
+            if kw["entity_group"] == "I-KWD":
+                current_keywords.append(kw["entity"])
+                scores.append(kw["score"])
+
+            # When the last keyword is of any type - it should be added to 
+            # `formatted_keywords`.
+            if i == len(keywords) - 1:
+                formatted_keywords.append({
+                    "keyword": " ".join(current_keywords),
+                    # Calculating the average score of all keywords in `current_keywords`.
+                    "score": sum(scores) / len(scores)
+                })
+
+        return formatted_keywords
+
+    def _extract_keywords(
+        self,
+        text: str,
+        max_len: int = 300,
+        id2group = {
+            # Indicates that this is not a keyword.
+            0: "O",
+            # Begining of keyword.
+            1: "B-KWD",
+            # Additional keywords (might also indicate the end of a keyword sequence).
+            # You can merge these with the begining keyword `B-KWD`.
+            2: "I-KWD",
+        },
+        threshold: float = 0.5
+    ) -> List[Dict[str, Any]]:
+        """Here the text is preprocessed, tokenized and then sent to the model
+        for inference. There are comments on each step.
+
+        Args:
+            text (str): Raw text.
+            max_len (int, optional): Maximum sequence length passed to the tokenizer. Defaults to 300.
+            id2group (dict, optional): ID to Group mapping for the entity groups. Defaults to { 0: "O", 1: "B-KWD", 2: "I-KWD", }.
+            threshold (float, optional): Threshold based on which some of the keywords with lower probabilties might be excluded. Defaults to 0.5.
+
+        Returns:
+            List[Dict[str, Any]]: Each found entity/keyword with its entity group and probability score.
+        """
+        # Preprocess the text.
+        # Surround punctuation with whitespace and convert multiple whitespaces
+        # into single ones.
+        text = re.sub(r"([,\.?!;:\'\"\(\)\[\]„”])", r" \1 ", text)
+        text = re.sub(r"\s+", r" ", text)
+        words = text.split()
+
+        # Tokenize the processed `text` (this includes padding or truncation).
+        tokens_data = self.tokenizer(
+            text.strip(), 
+            padding="max_length", 
+            max_length=max_len, 
+            truncation=True, 
+            return_tensors="pt"
+        )
+        input_ids = tokens_data.input_ids
+        attention_mask = tokens_data.attention_mask
+
+        # Predict the keywords.
+        out = self.model(input_ids, attention_mask=attention_mask).logits
+        # Softmax the last dimension so that the probabilities add up to 1.0.
+        out = out.softmax(-1)
+        # Based on the probabilities, generate the most probable keywords.
+        out_argmax = out.argmax(-1)
+        prediction = out_argmax.squeeze(0).tolist()
+        probabilities = out.squeeze(0)
+        
+        return [
+            {
+                # Since the list of words does not have a [CLS] token, the index `i`
+                # is one step forward, which means that if we want to access the 
+                # appropriate keyword we should use the index `i - 1`.
+                "entity": words[i - 1],
+                "entity_group": id2group[idx],
+                "score": float(probabilities[i, idx])
+            } 
+            for i, idx in enumerate(prediction) 
+            if (idx == 1 or idx == 2) and float(probabilities[i, idx]) > threshold
+        ]
