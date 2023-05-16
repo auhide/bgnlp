@@ -47,3 +47,11 @@ class NerTaggerConfig(ModelConfig):
     # Since I have uploaded this model to Huggingface's Model Hub, it is being 
     # downloaded only using this model ID:
     model_path: str = "auhide/bert-bg-ner"
+
+
+@dataclass
+class KeywordsTaggerConfig(ModelConfig):
+    device: str = "cpu"
+    # Since I have uploaded this model to Huggingface's Model Hub, it is being 
+    # downloaded only using this model ID:
+    model_path: str = "auhide/keybert-bg"
