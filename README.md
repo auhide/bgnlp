@@ -8,6 +8,15 @@ pip install bgnlp
 ```
 
 ## Package functionalities
+- [Part-of-speech](#pos)
+- [Lemmatization](#lemma)
+- [Named Entity Recognition](#ner)
+- [Keyword Extraction](#keywords)
+
+> Please note - only the first time you run one of these operations a model will be downloaded! Therefore, the first run might take more time.
+
+
+<a id="pos"></a>
 
 ### Part-of-speech (PoS) tagging
 
@@ -67,6 +76,8 @@ print(pos("Това е библиотека за обработка на ест�
 }]
 ```
 
+<a id="lemma"></a>
+
 ### Lemmatization
 
 ```python
@@ -89,6 +100,8 @@ print(lemmatize(text, as_string=True))
 ```bash
 Добре дойда!
 ```
+
+<a id="ner"></a>
 
 ### Named Entity Recognition (NER) tagging
 
@@ -113,22 +126,28 @@ Result: [{'word': 'Барух Спиноза', 'entity_group': 'PER'}, {'word': 
 ```
 
 
-### Using a Config object
-A tagger Config is used to define the underlying model. 
+<a id="keywords"></a>
 
-You can change the device on which it makes inference:
+### Keyword Extraction
 ```python
-# Make inference using the GPU (by default it is "cpu"):
-config = NerTaggerConfig(device="cuda")
-ner = NerTagger(config=config)
-# ...
-```
+from bgnlp import extract_keywords
 
-You can also change the path to the model weights. For `NerTagger` you can directly pass the HuggingFace's Model Hub path. All other taggers use weights uploaded to Google Drive.
-```python
-# Define the path to the model weights. It can be a single .pt file or a path to HuggingFace's Model Hub (only for NerTagger).
-config = NerTaggerConfig(model_path="path/to/model")
-ner = NerTagger(config=config)
-# ...
+
+# Reading the text from a file, since it may be large, hence it wouldn't be 
+# pleasant to write it directly here.
+# The current input is this Bulgarian news article (only the text, no HTML!):
+# https://novini.bg/sviat/eu/781622
+with open("text", "r", encoding="utf-8") as f:
+    text = f.read()
+
+# Extracting keywords with probability of at least 0.5.
+keywords = extract_keywords(text, threshold=0.5)
+print("Keywords:")
+pprint(keywords)
 ```
-Please, note that the model should be of the same architecture as the one used by the certain Tagger.
+```bash
+Keywords:
+[{'keyword': 'Еманюел Макрон', 'score': 0.8759163320064545},
+ {'keyword': 'Г-7', 'score': 0.5938143730163574},
+ {'keyword': 'Япония', 'score': 0.607077419757843}]
+```
