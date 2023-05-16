@@ -127,9 +127,7 @@ class PosTagger(BaseTagger, SubwordMixin):
 
         Example::
 
-            >>> from bgnlp import PosTagger, PosTaggerConfig
-            >>> config = PosTaggerConfig()
-            >>> pos = PosTagger(config=config)
+            >>> from bgnlp import pos
             >>> pos("Това е библиотека за обработка на естествен език.")
             [{
                 "word": "Това",
@@ -436,17 +434,15 @@ class LemmaTagger:
             List[Dict[str, str]]: List of dictionaries. Each dictionary has a word and a `lemma` key with a value - its lemma. If `additional_info`=True, the dictionary has PoS data.
 
         Example::
-            >>> from bgnlp import LemmaTaggerConfig, LemmaTagger
-            >>> lemma = LemmaTagger(config=LemmaTaggerConfig())
+            >>> from bgnlp import lemmatize
             >>> text = "Добре дошли!"
+            >>> # Return the lemmas as a dictionary.
             >>> print("Input:", text)
-            >>> print("Output:", lemma(text))
+            >>> print("Output:", lemmatize(text))
             [{'word': 'Добре', 'lemma': 'Добре'}, {'word': 'дошли', 'lemma': 'дойда'}, {'word': '!', 'lemma': '!'}]
 
-            >>> lemma = LemmaTagger(config=LemmaTaggerConfig())
-            >>> text = "Добре дошли!"
-            >>> print("Input:", text)
-            >>> print("Output:", lemma(text, as_string=True))
+            >>> # Or return the lemmas as a string.
+            >>> print("Output:", lemmatize(text, as_string=True))
             Input: Добре дошли!
             Output: Добре дойда!
         """
@@ -550,12 +546,8 @@ class NerTagger(BaseTagger, SubwordMixin):
             List[Dict[str, str]]: List of dictionaries. Each dictionary has a word and its NER tag.
 
         Example::
-            >>> from bgnlp import NerTagger, NerTaggerConfig
-
-
-            >>> ner = NerTagger(config=NerTaggerConfig())
+            >>> from bgnlp import ner
             >>> text = "Барух Спиноза е роден в Амстердам"
-
             >>> print(f"Input: {text}")
             >>> print("Result:", ner(text))
             Input: Барух Спиноза е роден в Амстердам
@@ -629,6 +621,11 @@ class NerTagger(BaseTagger, SubwordMixin):
 
 
 class KeywordsTagger(BaseTagger):
+    """Keyword Extraction tagger for Bulgarian texts.
+
+    Args:
+        config (ModelConfig): The model configuration.
+    """
 
     def __init__(self, config: ModelConfig):
         self.config = config
@@ -636,6 +633,25 @@ class KeywordsTagger(BaseTagger):
         self.tokenizer = self.get_tokenizer()
 
     def __call__(self, text: str, threshold: float = 0.5) -> List[Dict[str, Any]]:
+        """Extract keywords from Bulgarian texts.
+
+        Args:
+            text (str): The source text from which you are going to extract.
+            threshold (float, optional): Threshold based on which some of the keywords with lower probabilties might be excluded. Defaults to 0.5.
+        
+        Returns:
+            List[Dict[str, Any]]: List of dictionaries describing each keyword in `text`.
+
+        Example::
+            >>> from bgnlp import extract_keywords
+            >>> with open("input_text.txt", "r", encoding="utf-8") as f:
+            >>>     text = f.read()
+            >>> # Here threshold is optional, it defaults to 0.5.
+            >>> extract_keywords(text, threshold=0.6)
+            [{'keyword': 'Еманюел Макрон', 'score': 0.8759163320064545},
+            {'keyword': 'Г-7', 'score': 0.5938143730163574},
+            {'keyword': 'Япония', 'score': 0.607077419757843}]
+        """
         return self.predict(text, threshold)
 
     def get_tokenizer(self):
@@ -645,11 +661,41 @@ class KeywordsTagger(BaseTagger):
         return AutoModelForTokenClassification.from_pretrained(self.config.model_path)
 
     def predict(self, text: str, threshold: float = 0.5) -> List[Dict[str, Any]]:
+        """Extract keywords from Bulgarian texts.
+
+        Args:
+            text (str): The source text from which you are going to extract.
+            threshold (float, optional): Threshold based on which some of the keywords with lower probabilties might be excluded. Defaults to 0.5.
+        
+        Returns:
+            List[Dict[str, Any]]: List of dictionaries describing each keyword in `text`.
+
+        Example::
+            >>> from bgnlp import extract_keywords
+            >>> with open("input_text.txt", "r", encoding="utf-8") as f:
+            >>>     text = f.read()
+            >>> # Here threshold is optional, it defaults to 0.5.
+            >>> extract_keywords(text, threshold=0.6)
+            [{'keyword': 'Еманюел Макрон', 'score': 0.8759163320064545},
+            {'keyword': 'Г-7', 'score': 0.5938143730163574},
+            {'keyword': 'Япония', 'score': 0.607077419757843}]
+        """
         keywords = self._extract_keywords(text, threshold=threshold)
 
         return self._format_keywords(keywords)
     
     def _format_keywords(self, keywords: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Mainly responsible for the merging of subkeywords into keywords, i.e. when
+        the keyword consists of multiple words - 'Адам Фаузи', the two subkeywords 'Адам' and 'Фаузи'
+        are merged into one. This method also merges the probabilities by calculating
+        their average.
+
+        Args:
+            keywords (List[Dict[str, Any]]): Keywords with their `entity_group` and probability `score`.
+
+        Returns:
+            List[Dict[str, Any]]: Merged keywords (in some cases) with their probability scores.
+        """
         formatted_keywords = []
         # This is used for keywords that have multiple words.
         current_keywords = []
@@ -685,7 +731,7 @@ class KeywordsTagger(BaseTagger):
 
     def _extract_keywords(
         self,
-        text,
+        text: str,
         max_len: int = 300,
         id2group = {
             # Indicates that this is not a keyword.
@@ -698,6 +744,18 @@ class KeywordsTagger(BaseTagger):
         },
         threshold: float = 0.5
     ) -> List[Dict[str, Any]]:
+        """Here the text is preprocessed, tokenized and then sent to the model
+        for inference. There are comments on each step.
+
+        Args:
+            text (str): Raw text.
+            max_len (int, optional): Maximum sequence length passed to the tokenizer. Defaults to 300.
+            id2group (dict, optional): ID to Group mapping for the entity groups. Defaults to { 0: "O", 1: "B-KWD", 2: "I-KWD", }.
+            threshold (float, optional): Threshold based on which some of the keywords with lower probabilties might be excluded. Defaults to 0.5.
+
+        Returns:
+            List[Dict[str, Any]]: Each found entity/keyword with its entity group and probability score.
+        """
         # Preprocess the text.
         # Surround punctuation with whitespace and convert multiple whitespaces
         # into single ones.

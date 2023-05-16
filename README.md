@@ -137,7 +137,7 @@ from bgnlp import extract_keywords
 # pleasant to write it directly here.
 # The current input is this Bulgarian news article (only the text, no HTML!):
 # https://novini.bg/sviat/eu/781622
-with open("text", "r", encoding="utf-8") as f:
+with open("input_text.txt", "r", encoding="utf-8") as f:
     text = f.read()
 
 # Extracting keywords with probability of at least 0.5.
