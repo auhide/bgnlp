@@ -554,6 +554,7 @@ class NerTagger(BaseTagger, SubwordMixin):
             Result: [{'word': 'Барух Спиноза', 'entity_group': 'PER'}, {'word': 'Амстердам', 'entity_group': 'LOC'}]
 
         """
+        text = self._preprocess_text(text)
         return self.predict(text)
 
     def get_tokenizer(self):
@@ -611,13 +612,24 @@ class NerTagger(BaseTagger, SubwordMixin):
                 if curr_word:
                     curr_word = " ".join(curr_word)
                     result.append({
-                        "word": curr_word,
+                        "word": self._remove_punctuation(curr_word),
                         "entity_group": entities[i][2:]
                     })
                 
                 curr_word = []
 
         return result
+    
+    def _preprocess_text(self, text: str) -> str:
+        # Remove the whitespace before punctuation.
+        text = re.sub(r"\s+([,\.\?!;:\'\"\(\)\[\]„”])", r"\1", text)
+        # Leave out only a single whitespace.
+        text = re.sub(r"\s+", " ", text)
+        
+        return text
+
+    def _remove_punctuation(self, text: str) -> str:
+        return re.sub(r"([,\.\?!;:\'\"\(\)\[\]„”])", "", text)
 
 
 class KeywordsTagger(BaseTagger):
