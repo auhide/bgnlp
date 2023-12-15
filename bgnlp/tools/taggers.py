@@ -3,7 +3,7 @@ Natural language Taggers for Bulgarian. They are all model-based.
 """
 import os
 import re
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple, Union
 from abc import ABC, abstractmethod
 
 import torch
@@ -829,8 +829,13 @@ class PunctuationTagger(BaseTagger):
             tokenizer=self.tokenizer
         )
 
-    def __call__(self, text: str, threshold: float = 0.5):
-        return self.predict(text=text, threshold=threshold)
+    def __call__(
+        self, 
+        text: str, 
+        threshold: float = 0.5, 
+        return_metadata: bool = False
+    ) -> Union[str, Tuple[str, List[str]]]:
+        return self.predict(text=text, threshold=threshold, return_metadata=return_metadata)
 
     def get_model(self) -> str:
         """Returning the HuggingFace model path, because the inference will be made
@@ -850,16 +855,33 @@ class PunctuationTagger(BaseTagger):
         punct_map: Dict[str, str] = {
             "B-CMA": ",",
         },
-        threshold=0.5
-    ):
+        threshold=0.5,
+        return_metadata=False
+    ) -> Union[str, Tuple[str, List[str]]]:
         result = text
         
         entities = self.punctuate(text)
+        substrings = []
         b_entities_count = 0
         
-        for ent in entities:
+        for i, ent in enumerate(entities):
             if "B-" in ent["entity"] and ent["score"] >= threshold:
-                    result = f"{result[:ent['end'] + b_entities_count]}, {result[ent['end'] + 1 + b_entities_count:]}"
-                    b_entities_count += 1
+                # This is basically <left-tokens><comma> <right-tokens>.
+                result = f"{result[:ent['end'] + b_entities_count]}, {result[ent['end'] + 1 + b_entities_count:]}"
+                
+                left_token = result[ent['start'] + b_entities_count:ent['end'] + b_entities_count]
+                right_token = result[ent['end'] + 1 + b_entities_count:entities[i + 1]["end"] + b_entities_count]
+                
+                substrings.append({
+                    "substring": f"{left_token},{right_token}", 
+                    "score": (ent["score"] + entities[i + 1]["score"]) / 2,
+                    "start": ent["start"] + b_entities_count,
+                    "end": entities[i + 1]["end"] + b_entities_count,
+                })
+
+                b_entities_count += 1
+
+        if return_metadata:
+            return result, substrings
                     
         return result
