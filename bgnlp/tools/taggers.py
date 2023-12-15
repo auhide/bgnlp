@@ -10,6 +10,7 @@ import torch
 from torch import nn
 import gdown
 from transformers import logging
+from transformers import pipeline
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 
 from bgnlp.models import LemmaBert
@@ -17,7 +18,11 @@ from bgnlp.tools.mixins import SubwordMixin
 from bgnlp.tools.tokenizers import (
     CharacterBasedPreTokenizer, CharacterBasedTokenizer
 )
-from bgnlp.tools.configs import ModelConfig, PosTaggerConfig
+from bgnlp.tools.configs import (
+    ModelConfig, 
+    PosTaggerConfig, 
+    PunctuationTaggerConfig
+)
 
 
 # Logging only error messages from HuggingFace.
@@ -807,3 +812,54 @@ class KeywordsTagger(BaseTagger):
             for i, idx in enumerate(prediction) 
             if (idx == 1 or idx == 2) and float(probabilities[i, idx]) > threshold
         ]
+
+
+class PunctuationTagger(BaseTagger):
+
+    def __init__(self, config: ModelConfig):
+        self.config = config
+        # These two attributes are equal to the same string but I wanted to 
+        # comply with the structure of the other classes.
+        self.model = self.get_model()
+        self.tokenizer = self.get_tokenizer()
+
+        self.punctuate = pipeline(
+            "token-classification", 
+            model=self.model, 
+            tokenizer=self.tokenizer
+        )
+
+    def __call__(self, text: str, threshold: float = 0.5):
+        return self.predict(text=text, threshold=threshold)
+
+    def get_model(self) -> str:
+        """Returning the HuggingFace model path, because the inference will be made
+        using a HF `pipeline`."""
+        return self.config.model_path
+
+    def get_tokenizer(self) -> str:
+        """Returning the HuggingFace model path, because the inference will be made
+        using a HF `pipeline`."""
+        return self.config.model_path
+
+    def predict(
+        self,
+        text: str,
+        # TODO: Use this map when there are more tags. Currently, the model infers
+        # commas only. 
+        punct_map: Dict[str, str] = {
+            "B-CMA": ",",
+        },
+        threshold=0.5
+    ):
+        result = text
+        
+        entities = self.punctuate(text)
+        b_entities_count = 0
+        
+        for ent in entities:
+            if "B-" in ent["entity"] and ent["score"] >= threshold:
+                    result = f"{result[:ent['end'] + b_entities_count]}, {result[ent['end'] + 1 + b_entities_count:]}"
+                    b_entities_count += 1
+                    
+        return result
