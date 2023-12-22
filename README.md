@@ -12,6 +12,7 @@ pip install bgnlp
 - [Lemmatization](#lemma)
 - [Named Entity Recognition](#ner)
 - [Keyword Extraction](#keywords)
+- [Commatization](#comma)
 
 > Please note - only the first time you run one of these operations a model will be downloaded! Therefore, the first run might take more time.
 
@@ -150,4 +151,37 @@ Keywords:
 [{'keyword': 'Еманюел Макрон', 'score': 0.8759163320064545},
  {'keyword': 'Г-7', 'score': 0.5938143730163574},
  {'keyword': 'Япония', 'score': 0.607077419757843}]
+```
+
+<a id="comma"></a>
+
+### Commatization
+```python
+from pprint import pprint
+
+from bgnlp import commatize
+
+
+text = "Човекът искащ безгрижно писане ме помоли да създам този модел."
+
+print("Without metadata:")
+print(commatize(text))
+
+print("\nWith metadata:")
+pprint(commatize(text, return_metadata=True))
+```
+```bash
+Without metadata:
+Човекът, искащ безгрижно писане, ме помоли да създам този модел.
+
+With metadata:
+('Човекът, искащ безгрижно писане, ме помоли да създам този модел.',
+ [{'end': 12,
+   'score': 0.9301406145095825,
+   'start': 0,
+   'substring': 'Човекът, иск'},
+  {'end': 34,
+   'score': 0.93571537733078,
+   'start': 24,
+   'substring': ' писане, м'}])
 ```
