@@ -55,3 +55,9 @@ class KeywordsTaggerConfig(ModelConfig):
     # Since I have uploaded this model to Huggingface's Model Hub, it is being 
     # downloaded only using this model ID:
     model_path: str = "auhide/keybert-bg"
+
+
+@dataclass
+class PunctuationTaggerConfig(ModelConfig):
+    device: str = "cpu"
+    model_path: str = "auhide/punctual-bert-bg"

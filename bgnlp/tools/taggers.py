@@ -3,13 +3,14 @@ Natural language Taggers for Bulgarian. They are all model-based.
 """
 import os
 import re
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple, Union
 from abc import ABC, abstractmethod
 
 import torch
 from torch import nn
 import gdown
 from transformers import logging
+from transformers import pipeline
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 
 from bgnlp.models import LemmaBert
@@ -17,7 +18,11 @@ from bgnlp.tools.mixins import SubwordMixin
 from bgnlp.tools.tokenizers import (
     CharacterBasedPreTokenizer, CharacterBasedTokenizer
 )
-from bgnlp.tools.configs import ModelConfig, PosTaggerConfig
+from bgnlp.tools.configs import (
+    ModelConfig, 
+    PosTaggerConfig, 
+    PunctuationTaggerConfig
+)
 
 
 # Logging only error messages from HuggingFace.
@@ -807,3 +812,104 @@ class KeywordsTagger(BaseTagger):
             for i, idx in enumerate(prediction) 
             if (idx == 1 or idx == 2) and float(probabilities[i, idx]) > threshold
         ]
+
+
+class PunctuationTagger(BaseTagger):
+
+    def __init__(self, config: ModelConfig):
+        """Punctuator for Bulgarian texts.
+
+        Args:
+            config (ModelConfig): Model configuration. By default it is `bgnlp.tools.configs.PunctuationTaggerConfig`.
+        """
+        self.config = config
+        # These two attributes are equal to the same string but I wanted to 
+        # comply with the structure of the other classes.
+        self.model = self.get_model()
+        self.tokenizer = self.get_tokenizer()
+
+        self.punctuate = pipeline(
+            "token-classification", 
+            model=self.model, 
+            tokenizer=self.tokenizer
+        )
+
+    def __call__(
+        self, 
+        text: str, 
+        threshold: float = 0.5, 
+        return_metadata: bool = False
+    ) -> Union[str, Tuple[str, List[str]]]:
+        """Punctuate Bulgarian texts.
+
+        Args:
+            text (str): Text that's going to be punctuated.
+            threshold (float, optional): Probability threshold for punctuation. Defaults to 0.5.
+            return_metadata (bool, optional): Whether to return metadata like probabilty for each punctuation. Defaults to False.
+
+        Returns:
+            Union[str, Tuple[str, List[str]]]: Either a string of the punctuated text, or the punctuated text with its metadata.
+        """
+        return self.predict(text=text, threshold=threshold, return_metadata=return_metadata)
+
+    def get_model(self) -> str:
+        """Returning the HuggingFace model path, because the inference will be made
+        using a HF `pipeline`."""
+        return self.config.model_path
+
+    def get_tokenizer(self) -> str:
+        """Returning the HuggingFace model path, because the inference will be made
+        using a HF `pipeline`."""
+        return self.config.model_path
+
+    def predict(
+        self,
+        text: str,
+        # TODO: Use this map when there are more tags. Currently, the model infers
+        # commas only. 
+        punct_map: Dict[str, str] = {
+            "B-CMA": ",",
+        },
+        threshold=0.5,
+        return_metadata=False
+    ) -> Union[str, Tuple[str, List[str]]]:
+        """Tag where the commas should be. Then punctuate the input string `text`.
+
+        Args:
+            text (str): Text that's going to be punctuated.
+            punct_map (_type_, optional): Punctuation tag map. Defaults to { "B-CMA": ",", }.
+            threshold (float, optional): Probability threshold for the punctuation tags. Defaults to 0.5.
+            return_metadata (bool, optional): Whether to return the punctuation metadata or not. Defaults to False.
+
+        Returns:
+            Union[str, Tuple[str, List[str]]]: _description_
+        """
+        text = re.sub(",", "", text)
+
+        entities = self.punctuate(text)
+        substrings = []
+        b_entities_count = 0
+
+        result = text
+        
+        for i, ent in enumerate(entities):
+            if "B-" in ent["entity"] and ent["score"] >= threshold:
+                # This is basically <left-tokens><comma> <right-tokens>.
+                result = f"{result[:ent['end'] + b_entities_count]}, {result[ent['end'] + 1 + b_entities_count:]}"
+                
+                left_token = result[ent['start'] + b_entities_count:ent['end'] + b_entities_count]
+                right_token = result[ent['end'] + 1 + b_entities_count:entities[i + 1]["end"] + b_entities_count]
+                
+                substrings.append({
+                    "substring": f"{left_token},{right_token}", 
+                    "score": (ent["score"] + entities[i + 1]["score"]) / 2,
+                    "start": ent["start"] + b_entities_count,
+                    "end": entities[i + 1]["end"] + b_entities_count,
+                })
+
+                b_entities_count += 1
+
+        if return_metadata:
+            return result, substrings
+                    
+        return result
