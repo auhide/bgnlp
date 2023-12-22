@@ -20,8 +20,7 @@ from bgnlp.tools.tokenizers import (
 )
 from bgnlp.tools.configs import (
     ModelConfig, 
-    PosTaggerConfig, 
-    PunctuationTaggerConfig
+    PosTaggerConfig,
 )
 
 
