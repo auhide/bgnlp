@@ -1,7 +1,7 @@
-torch
-numpy
-pandas
-torchmetrics
-torchtext
-transformers
-gdown
+torch==1.11.0
+numpy==1.26.2
+pandas==1.4.3
+torchmetrics==0.11.0
+torchtext==0.12.0
+transformers==4.26.0
+gdown==4.6.0
