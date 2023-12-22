@@ -11,7 +11,7 @@ REQUIREMENTS_PATH = os.path.join(ROOT, "requirements.txt")
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text(encoding="utf-8")
 
-VERSION = '0.4.0'
+VERSION = '0.4.1'
 DESCRIPTION = 'Package for Bulgarian Natural Language Processing (NLP)'
 
 
