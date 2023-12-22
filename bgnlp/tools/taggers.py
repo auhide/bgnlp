@@ -817,6 +817,11 @@ class KeywordsTagger(BaseTagger):
 class PunctuationTagger(BaseTagger):
 
     def __init__(self, config: ModelConfig):
+        """Punctuator for Bulgarian texts.
+
+        Args:
+            config (ModelConfig): Model configuration. By default it is `bgnlp.tools.configs.PunctuationTaggerConfig`.
+        """
         self.config = config
         # These two attributes are equal to the same string but I wanted to 
         # comply with the structure of the other classes.
@@ -835,6 +840,16 @@ class PunctuationTagger(BaseTagger):
         threshold: float = 0.5, 
         return_metadata: bool = False
     ) -> Union[str, Tuple[str, List[str]]]:
+        """Punctuate Bulgarian texts.
+
+        Args:
+            text (str): Text that's going to be punctuated.
+            threshold (float, optional): Probability threshold for punctuation. Defaults to 0.5.
+            return_metadata (bool, optional): Whether to return metadata like probabilty for each punctuation. Defaults to False.
+
+        Returns:
+            Union[str, Tuple[str, List[str]]]: Either a string of the punctuated text, or the punctuated text with its metadata.
+        """
         return self.predict(text=text, threshold=threshold, return_metadata=return_metadata)
 
     def get_model(self) -> str:
@@ -858,11 +873,24 @@ class PunctuationTagger(BaseTagger):
         threshold=0.5,
         return_metadata=False
     ) -> Union[str, Tuple[str, List[str]]]:
-        result = text
-        
+        """Tag where the commas should be. Then punctuate the input string `text`.
+
+        Args:
+            text (str): Text that's going to be punctuated.
+            punct_map (_type_, optional): Punctuation tag map. Defaults to { "B-CMA": ",", }.
+            threshold (float, optional): Probability threshold for the punctuation tags. Defaults to 0.5.
+            return_metadata (bool, optional): Whether to return the punctuation metadata or not. Defaults to False.
+
+        Returns:
+            Union[str, Tuple[str, List[str]]]: _description_
+        """
+        text = re.sub(",", "", text)
+
         entities = self.punctuate(text)
         substrings = []
         b_entities_count = 0
+
+        result = text
         
         for i, ent in enumerate(entities):
             if "B-" in ent["entity"] and ent["score"] >= threshold:
