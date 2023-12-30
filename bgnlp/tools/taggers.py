@@ -902,9 +902,14 @@ class PunctuationTagger(BaseTagger):
                 # This is basically <left-tokens><comma> <right-tokens>.
                 result = f"{result[:ent['end'] + b_entities_count]}, {result[ent['end'] + 1 + b_entities_count:]}"
                 
-                left_token = result[ent['start'] + b_entities_count:ent['end'] + b_entities_count]
-                right_token = result[ent['end'] + 1 + b_entities_count:entities[i + 1]["end"] + b_entities_count]
-                
+                # Handling cases in which the right token is not available in the sequence
+                # and cannot be caught.
+                try:
+                    left_token = result[ent['start'] + b_entities_count:ent['end'] + b_entities_count]
+                    right_token = result[ent['end'] + 1 + b_entities_count:entities[i + 1]["end"] + b_entities_count]
+                except IndexError:
+                    continue
+
                 substrings.append({
                     "substring": f"{left_token},{right_token}", 
                     "score": (ent["score"] + entities[i + 1]["score"]) / 2,
