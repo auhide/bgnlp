@@ -44,7 +44,10 @@ class BaseTagger(ABC):
 
     def load_model(self, model_obj):
         if os.path.exists(self.config.model_path):
-            model_obj.load_state_dict(torch.load(self.config.model_path, map_location=self.config.device))
+            model_obj.load_state_dict(
+                torch.load(self.config.model_path, map_location=self.config.device), 
+                strict=False
+            )
         else:
             # Downloading the model if it doesn't exist locally.
             # The model is not deployed with the PyPI package - hence, the download below.
@@ -53,7 +56,10 @@ class BaseTagger(ABC):
                 self.config.model_path, 
                 quiet=False
             )
-            model_obj.load_state_dict(torch.load(self.config.model_path, map_location=self.config.device))
+            model_obj.load_state_dict(
+                torch.load(self.config.model_path, map_location=self.config.device), 
+                strict=False
+            )
 
         return model_obj
 
