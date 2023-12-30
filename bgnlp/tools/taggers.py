@@ -603,13 +603,13 @@ class NerTagger(BaseTagger, SubwordMixin):
         result = []
         curr_word = []
 
-        for i, (word, entity) in enumerate(zip(words[1:], entities[1:])):
+        for i, (word, entity) in enumerate(zip(words[1:], entities)):
             if "B-" in entity:
                 if curr_word:
                     curr_word = " ".join(curr_word)
                     result.append({
                         "word": curr_word,
-                        "entity_group": entities[i][2:]
+                        "entity_group": entities[i - 1][2:]
                     })
                     curr_word = [word]
                 else:
@@ -623,7 +623,7 @@ class NerTagger(BaseTagger, SubwordMixin):
                     curr_word = " ".join(curr_word)
                     result.append({
                         "word": self._remove_punctuation(curr_word),
-                        "entity_group": entities[i][2:]
+                        "entity_group": entities[i - 1][2:]
                     })
                 
                 curr_word = []
