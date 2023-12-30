@@ -21,4 +21,4 @@ extract_keywords = KeywordsTagger(config=KeywordsTaggerConfig())
 commatize = PunctuationTagger(config=PunctuationTaggerConfig())
 
 
-__version__ = "0.5.0"
+__version__ = "0.5.1"
