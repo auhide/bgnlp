@@ -74,8 +74,6 @@ class PosTagger(BaseTagger, SubwordMixin):
 
     def __init__(self, config: ModelConfig):
         self.config = config
-        self.tokenizer = self.get_tokenizer()
-        self.model = self.get_model().to(self.config.device)
 
         # TODO: Have better descriptions. Figure out the full meanings of the tags.
         self.TAGS_MAPPING = {
@@ -186,6 +184,9 @@ class PosTagger(BaseTagger, SubwordMixin):
                 "en_desc": "punctuation"
             }]
         """
+        self.model = self.get_model().to(self.config.device)
+        self.tokenizer = self.get_tokenizer()
+
         self.max_len = max_len
 
         return self.predict(text)
@@ -338,8 +339,6 @@ class Lemmatizer(BaseTagger):
 
     def __init__(self, config: ModelConfig):
         self.config = config
-        self.tokenizer = self.get_tokenizer()
-        self.model = self.get_model()
 
     def __call__(self, word: str, pos: str) -> str:
         """Convert `word` into its lemma.
@@ -358,6 +357,9 @@ class Lemmatizer(BaseTagger):
             >>> lemma("езикът", "Ns")
             език
         """
+        self.model = self.get_model()
+        self.tokenizer = self.get_tokenizer()
+
         return self.predict(word, pos)
 
     def get_tokenizer(self) -> CharacterBasedTokenizer:
@@ -540,8 +542,6 @@ class NerTagger(BaseTagger, SubwordMixin):
 
     def __init__(self, config: ModelConfig):
         self.config = config
-        self.tokenizer = self.get_tokenizer()
-        self.model = self.get_model()
 
     def __call__(self, text: str) -> List[Dict[str, str]]:
         """Find entities in `text`. These entities may be:
@@ -564,6 +564,9 @@ class NerTagger(BaseTagger, SubwordMixin):
             Result: [{'word': 'Барух Спиноза', 'entity_group': 'PER'}, {'word': 'Амстердам', 'entity_group': 'LOC'}]
 
         """
+        self.tokenizer = self.get_tokenizer()
+        self.model = self.get_model()
+
         text = self._preprocess_text(text)
         return self.predict(text)
 
@@ -651,8 +654,6 @@ class KeywordsTagger(BaseTagger):
 
     def __init__(self, config: ModelConfig):
         self.config = config
-        self.model = self.get_model()
-        self.tokenizer = self.get_tokenizer()
 
     def __call__(self, text: str, threshold: float = 0.5) -> List[Dict[str, Any]]:
         """Extract keywords from Bulgarian texts.
@@ -674,6 +675,9 @@ class KeywordsTagger(BaseTagger):
             {'keyword': 'Г-7', 'score': 0.5938143730163574},
             {'keyword': 'Япония', 'score': 0.607077419757843}]
         """
+        self.tokenizer = self.get_tokenizer()
+        self.model = self.get_model()
+
         return self.predict(text, threshold)
 
     def get_tokenizer(self):
@@ -828,16 +832,6 @@ class PunctuationTagger(BaseTagger):
             config (ModelConfig): Model configuration. By default it is `bgnlp.tools.configs.PunctuationTaggerConfig`.
         """
         self.config = config
-        # These two attributes are equal to the same string but I wanted to 
-        # comply with the structure of the other classes.
-        self.model = self.get_model()
-        self.tokenizer = self.get_tokenizer()
-
-        self.punctuate = pipeline(
-            "token-classification", 
-            model=self.model, 
-            tokenizer=self.tokenizer
-        )
 
     def __call__(
         self, 
@@ -855,6 +849,17 @@ class PunctuationTagger(BaseTagger):
         Returns:
             Union[str, Tuple[str, List[str]]]: Either a string of the punctuated text, or the punctuated text with its metadata.
         """
+        # These two attributes are equal to the same string but I wanted to 
+        # comply with the structure of the other classes.
+        self.tokenizer = self.get_tokenizer()
+        self.model = self.get_model()
+
+        self.punctuate = pipeline(
+            "token-classification", 
+            model=self.model, 
+            tokenizer=self.tokenizer
+        )
+
         return self.predict(text=text, threshold=threshold, return_metadata=return_metadata)
 
     def get_model(self) -> str:
