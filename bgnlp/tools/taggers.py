@@ -184,8 +184,8 @@ class PosTagger(BaseTagger, SubwordMixin):
                 "en_desc": "punctuation"
             }]
         """
-        self.model = self.get_model().to(self.config.device)
         self.tokenizer = self.get_tokenizer()
+        self.model = self.get_model().to(self.config.device)
 
         self.max_len = max_len
 
@@ -357,8 +357,8 @@ class Lemmatizer(BaseTagger):
             >>> lemma("езикът", "Ns")
             език
         """
-        self.model = self.get_model()
         self.tokenizer = self.get_tokenizer()
+        self.model = self.get_model()
 
         return self.predict(word, pos)
 
